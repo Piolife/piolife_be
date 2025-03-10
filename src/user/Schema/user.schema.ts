@@ -90,8 +90,8 @@ degreeCertificate?: string;
 @Prop()
 currentPracticeLicense?: string;
 
-  @Prop({ type: BankDetails })
-  bankDetails?: BankDetails;
+@Prop({ type: BankDetails })
+bankDetails?: BankDetails;
 
 @Prop()
 languageProficiency?: Array<string>;

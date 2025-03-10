@@ -5,7 +5,7 @@ import { CreateUserDto, LoginDto } from './dto/user.dto';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcryptjs';
-import { FileFieldsInterceptor, FileInterceptor } from '@nestjs/platform-express';
+import { FileFieldsInterceptor, } from '@nestjs/platform-express';
 
 @ApiTags(' User Auth')
 @Controller('users')
@@ -29,7 +29,7 @@ export class UserController {
         otherName: { type: 'string', nullable: true },
         email: { type: 'string', format: 'email' },
         password: { type: 'string' },
-        role: { type: 'string', enum: ['client', 'medical_practitioner'] },
+        role: { type: 'string', enum: ['client', 'medical_practitioner', 'emergency_services', 'real_estate_services', 'insurance_services'] },
         gender: { type: 'string', nullable: true },
         dateOfBirth: { type: 'string', format: 'date', nullable: true },
         maritalStatus: { type: 'string', nullable: true },

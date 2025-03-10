@@ -1,18 +1,18 @@
-import { IsEnum, IsOptional, IsString, IsNotEmpty, ValidateNested, IsEmail, } from 'class-validator';
+import { IsEnum, IsOptional, IsString, IsNotEmpty, ValidateNested, IsEmail, IsObject, } from 'class-validator';
 import { UserRole, UserStatus } from '../enum/user.enum';
 import { Type } from 'class-transformer';
 
 class BankDetailsDto {
   @IsString()
-  @IsNotEmpty()
+  @IsOptional()
   bankName: string;
 
   @IsString()
-  @IsNotEmpty()
+  @IsOptional()
   accountName: string;
 
   @IsString()
-  @IsNotEmpty()
+  @IsOptional()
   accountNumber: string;
 }
 
@@ -94,7 +94,6 @@ export class CreateUserDto {
   currentPracticeLicense?: string;
 
   @IsOptional()
-  @ValidateNested()
   @Type(() => BankDetailsDto)
   bankDetails?: BankDetailsDto;
 

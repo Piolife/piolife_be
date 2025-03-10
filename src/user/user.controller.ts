@@ -159,7 +159,6 @@ export class UserController {
       },
     },
   })
-  @Post('forgot-password')
   async requestPasswordReset(@Body('email') email: string) {
     return this.userService.requestPasswordReset(email);
   }

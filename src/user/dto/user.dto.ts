@@ -1,4 +1,4 @@
-import { IsEnum, IsOptional, IsString, IsNotEmpty, ValidateNested, IsEmail, IsObject, } from 'class-validator';
+import { IsEnum, IsOptional, IsString, IsNotEmpty, IsEmail, ValidateIf } from 'class-validator';
 import { UserRole, UserStatus } from '../enum/user.enum';
 import { Type } from 'class-transformer';
 
@@ -93,6 +93,8 @@ export class CreateUserDto {
   @IsOptional()
   currentPracticeLicense?: string;
 
+  @ValidateIf((dto) => dto.role !== UserRole.CLIENT)
+  @IsNotEmpty({ message: 'Bank details are required for this role.' })
   @IsOptional()
   @Type(() => BankDetailsDto)
   bankDetails?: BankDetailsDto;

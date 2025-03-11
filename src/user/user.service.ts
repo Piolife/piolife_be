@@ -56,6 +56,10 @@ export class UserService {
     if (existingUser) {
       throw new ConflictException('User with the same email already exists');
     }
+
+    if (role === UserRole.CLIENT && createUserDto.bankDetails) {
+      throw new BadRequestException('Bank Details not required for this role.');
+    }
   
     if (role === UserRole.MEDICAL_PRACTITIONER) {
       if (!degreeCertificateUrl || !currentPracticeLicenseUrl || !createUserDto.bankDetails) {
@@ -85,7 +89,6 @@ export class UserService {
 
     const createdUser = await user.save();
 
-    console.log('createdUser', createdUser);
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const otpToken = this.jwtService.sign(
       { userId: createdUser._id, otp },

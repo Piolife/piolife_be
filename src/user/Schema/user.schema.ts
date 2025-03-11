@@ -17,6 +17,7 @@ class BankDetails {
     @Prop({ required: true })
     accountNumber: string;
   }
+  
 
 @Schema({ timestamps: true })
 export class User {
@@ -89,6 +90,7 @@ degreeCertificate?: string;
 
 @Prop()
 currentPracticeLicense?: string;
+
 
 @Prop({ type: BankDetails })
 bankDetails?: BankDetails;

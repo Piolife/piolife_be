@@ -19,7 +19,14 @@ async function bootstrap() {
 
   app.setGlobalPrefix('api/v12');
   app.setViewEngine('hbs');
-  app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
+
+  app.useGlobalPipes(new ValidationPipe({
+    whitelist: true, 
+    forbidNonWhitelisted: true, 
+    transform: true, 
+  }));
+
+  // app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
 
   const documentationOptions = new DocumentBuilder()
     .setTitle('PIOLIFE API DOCS')

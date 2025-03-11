@@ -6,6 +6,8 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcryptjs';
 import { FileFieldsInterceptor, } from '@nestjs/platform-express';
+import { validateSync } from 'class-validator';
+import { plainToInstance } from 'class-transformer';
 
 @ApiTags(' User Auth')
 @Controller('users')
@@ -61,6 +63,7 @@ export class UserController {
       { name: 'currentPracticeLicense', maxCount: 1 },
     ]),
   )
+  @Post('create')
   async createUser(
     @Body() createUserDto: CreateUserDto,
     @UploadedFiles() files: { 
@@ -69,8 +72,26 @@ export class UserController {
       currentPracticeLicense?: Express.Multer.File[];
     }
   ): Promise<{ message: string; token: string; otp: string }> {
+
+    
+    const validatedDto = plainToInstance(CreateUserDto, createUserDto);    
+    const errors = validateSync(validatedDto, { whitelist: true, forbidNonWhitelisted: true });
+  
+    if (errors.length > 0) {
+      const formattedErrors = errors.map(error => ({
+        property: error.property,
+        constraints: error.constraints,
+      }));
+  
+      throw new BadRequestException({
+        message: 'Invalid input fields',
+        errors: formattedErrors,
+      });
+    }
+  
     return await this.userService.createUser(files, createUserDto);
   }
+  
   
 
 

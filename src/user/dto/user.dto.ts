@@ -1,4 +1,4 @@
-import { IsEnum, IsOptional, IsString, IsNotEmpty, IsEmail, ValidateIf } from 'class-validator';
+import { IsEnum, IsOptional, IsString, IsNotEmpty, IsEmail, ValidateIf, } from 'class-validator';
 import { UserRole, UserStatus } from '../enum/user.enum';
 import { Type } from 'class-transformer';
 
@@ -34,12 +34,12 @@ export class CreateUserDto {
   @IsNotEmpty()
   email: string;
 
-
-
   @IsString()
+  @IsNotEmpty()
   password: string;
 
   @IsEnum(UserRole)
+  @IsNotEmpty()
   role: UserRole;
 
   @IsEnum(UserStatus)
@@ -63,7 +63,7 @@ export class CreateUserDto {
   countryOrigin?: string;
 
   @IsString()
-  @IsOptional()
+  @IsNotEmpty()
   phoneNumber: string;
 
 
@@ -93,16 +93,41 @@ export class CreateUserDto {
   @IsOptional()
   currentPracticeLicense?: string;
 
+  @IsString()
+  @IsOptional()
+  specialty?: string;
+
+  @IsString()
+  @IsOptional()
+  ward?:string
+
+  @IsString()
+  @IsOptional()
+  localGovernmentArea:string
+
+
+  @IsOptional()
+  languageProficiency?: Array<string>;
+
+  @IsString()
+  @IsOptional()
+  policyAgreement?: string;
+
   @ValidateIf((dto) => dto.role !== UserRole.CLIENT)
-  @IsNotEmpty({ message: 'Bank details are required for this role.' })
+  @IsNotEmpty({ message: 'At least one bank detail is required for this role.' })
   @IsOptional()
   @Type(() => BankDetailsDto)
-  bankDetails?: BankDetailsDto;
+  bankDetails?: BankDetailsDto[];
 
 
   @IsString()
   @IsOptional()
   hospitalName: string;
+
+  @IsString()
+  @IsOptional()
+  countryOfOrigin: string;
+
   @IsString()
   @IsOptional()
   officerInCharge: string;

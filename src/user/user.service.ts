@@ -9,6 +9,8 @@ import * as bcrypt from 'bcryptjs';
 import { JwtService } from '@nestjs/jwt';
 import { CloudinaryService } from 'src/services/cloudinary/cloudinary.service';
 import { EmailService } from 'src/services/email/email.sevice';
+import e from 'express';
+
 
 @Injectable()
 export class UserService {
@@ -21,87 +23,338 @@ export class UserService {
   ) {}
 
 
+  // async createUser(
+  //   files: { 
+  //     profileImage?: Express.Multer.File[]; 
+  //     degreeCertificate?: Express.Multer.File[]; 
+  //     currentPracticeLicense?: Express.Multer.File[];
+  //   }, 
+  //   createUserDto: CreateUserDto
+  // ): Promise<{ message: string; token: string; otp: string }> {
+  
+  //   let profileImageUrl = '';
+  //   let degreeCertificateUrl = '';
+  //   let currentPracticeLicenseUrl = '';
+
+  //   if (!files.profileImage || files.profileImage.length === 0) {
+  //     throw new BadRequestException('Profile Image is required.');
+  //   }
+  
+  //   // Upload and assign each file separately
+  //   if (files.profileImage && files.profileImage.length > 0) {
+  //     const uploadedProfile = await this.cloudinaryService.uploadFile(files.profileImage[0]);
+  //     profileImageUrl = uploadedProfile.secure_url;
+  //   }
+  
+  //   if (files.degreeCertificate && files.degreeCertificate.length > 0) {
+  //     const uploadedDegree = await this.cloudinaryService.uploadFile(files.degreeCertificate[0]);
+  //     degreeCertificateUrl = uploadedDegree.secure_url;
+  //   }
+  
+  //   if (files.currentPracticeLicense && files.currentPracticeLicense.length > 0) {
+  //     const uploadedLicense = await this.cloudinaryService.uploadFile(files.currentPracticeLicense[0]);
+  //     currentPracticeLicenseUrl = uploadedLicense.secure_url;
+  //   }
+  
+  //   const { email, role, password} = createUserDto;
+  
+  //   const existingUser = await this.userModel.findOne({ role, email: email.toLowerCase() }).exec();
+  //   if (existingUser) {
+  //     throw new ConflictException('User with the same email already exists');
+  //   }
+
+  //   if (role === UserRole.CLIENT) {
+  //     const prohibitedFields = {
+  //       bankDetails: 'Bank Details',
+  //       degreeCertificateUrl: 'Degree Certificate',
+  //       currentPracticeLicenseUrl: 'Current Practice License',
+  //       specialty: 'Area of Specialty',
+  //       ward: 'Ward',
+  //       localGovernmentArea: 'Local Government Area',
+  //       hospitalName: 'Hospital Name',
+  //       officerInCharge: 'Officer In Charge',
+  //       languageProficiency: 'Language Proficiency',
+  //     };
+    
+  //     for (const [key, message] of Object.entries(prohibitedFields)) {
+  //       if (createUserDto[key]) {
+  //         throw new BadRequestException(`${message} not required for this role.`);
+  //       }
+  //     }
+  //   }
+    
+    // if (role === UserRole.CLIENT && degreeCertificateUrl ) {
+    //   throw new BadRequestException('Degree Certificate not required for this role.')
+    // }
+    // if (role === UserRole.CLIENT && currentPracticeLicenseUrl) {
+    //   throw new BadRequestException('Current Practice License not required for this role.')
+    // }
+
+  //   if (role === UserRole.CLIENT) {
+  //     const requiredFields = {
+  //       firstName: 'First Name',
+  //       lastName: 'Last Name',
+  //       email: 'Email',
+  //       password: 'Password',
+  //       phoneNumber: 'Phone Number',
+  //       gender:'Gender',
+  //       maritalStatus: 'Marital Status',
+  //       dateOfBirth: 'Date Of Birth',
+  //       countryOfResidence: 'Country Of Residence',
+  //       countryOfOrigin: 'Country Of Origin',
+  //       stateOfResidence: 'State Of Residence',
+  //       stateOfOrigin: 'State Of Origin',
+  //     };
+    
+  //     for (const [key, message] of Object.entries(requiredFields)) {
+  //       if (!createUserDto[key] || (Array.isArray(createUserDto[key]) && createUserDto[key].length === 0)) {
+  //         throw new BadRequestException(`Client must provide ${message}.`);
+  //       }
+  //     }
+  //   }
+
+  //   if (role === UserRole.MEDICAL_PRACTITIONER) {
+  //     const prohibitedFields = {
+  //       ward: 'Ward',
+  //       localGovernmentArea: 'Local Government Area',
+  //       hospitalName: 'Hospital Name',
+  //       officerInCharge: 'Officer In Charge',
+  //     };
+    
+  //     for (const [key, message] of Object.entries(prohibitedFields)) {
+  //       if (createUserDto[key]) {
+  //         throw new BadRequestException(`${message} not required for this role.`);
+  //       }
+  //     }
+  //   }
+
+  //   if (role === UserRole.MEDICAL_PRACTITIONER) {
+  //     const requiredFields = {
+  //       firstName: 'First Name',
+  //       lastName: 'Last Name',
+  //       email: 'Email',
+  //       password: 'Password',
+  //       phoneNumber: 'Phone Number',
+  //       specialty: 'Area of Specialty',
+  //       gender:'Gender',
+  //       maritalStatus: 'Marital Status',
+  //       dateOfBirth: 'Date Of Birth',
+  //       countryOfResidence: 'Country Of Residence',
+  //       countryOfOrigin: 'Country Of Origin',
+  //       stateOfResidence: 'State Of Residence',
+  //       stateOfOrigin: 'State Of Origin',
+  //       languageProficiency: 'Language Proficiency',
+  //       policyAgreement: 'Policy Agreement',
+  //       bankDetails: 'Bank Details',
+  //     };
+    
+  //     for (const [key, message] of Object.entries(requiredFields)) {
+  //       if (!createUserDto[key] || (Array.isArray(createUserDto[key]) && createUserDto[key].length === 0)) {
+  //         throw new BadRequestException(`Medical Practitioner must provide ${message}.`);
+  //       }
+  //     }
+
+  //         if (!degreeCertificateUrl) {
+  //       throw new BadRequestException('Medical Practitioner must provide Degree Certificate.');
+  //     }
+      
+  //     if (!currentPracticeLicenseUrl) {
+  //       throw new BadRequestException('Medical Practitioner must provide Current Practice License.');
+  //     }
+  //   }
+  
+  //   if (role === UserRole.EMERGENCY_SERVICES) {
+  //     const prohibitedFields = {
+  //       firstName: 'First Name',
+  //       lastName: 'Last Name',
+  //       email: 'Email',
+  //       password: 'Password',
+  //       specialty: 'Area of Specialty',
+  //       languageProficiency: 'Language Proficiency',
+  //       gender:'Gender',
+  //       maritalStatus: 'Marital Status',
+  //       dateOfBirth: 'Date Of Birth',
+  //     };
+    
+  //     for (const [key, message] of Object.entries(prohibitedFields)) {
+  //       if (createUserDto[key]) {
+  //         throw new BadRequestException(`${message} not required for this role.`);
+  //       }
+  //     }
+  //   }
+  //   if (role === UserRole.EMERGENCY_SERVICES && degreeCertificateUrl ) {
+  //     throw new BadRequestException('Degree Certificate not required for this role.')
+  //   }
+  //   if (role === UserRole.EMERGENCY_SERVICES && currentPracticeLicenseUrl) {
+  //     throw new BadRequestException('Current Practice License not required for this role.')
+  //   }
+
+  //   if (role === UserRole.EMERGENCY_SERVICES) {
+  //     if (!createUserDto.hospitalName|| !createUserDto.officerInCharge || !createUserDto.bankDetails) {
+  //       throw new BadRequestException(
+  //         'Hospital Name and Officer In Charge and Bank Details be must provide.',
+  //       );
+  //     }
+
+  //     if (!createUserDto.ward) {
+  //       throw new BadRequestException('Emergency Services must provide ward.');
+  //     }
+
+  //     if (!createUserDto.localGovernmentArea) {
+  //       throw new BadRequestException('Emergency Services must provide local goverment area.');
+  //     }
+
+  //     if (!createUserDto.stateOfResidence) {
+  //       throw new BadRequestException('Emergency Services must provide State.');
+  //     }
+  //   }
+  
+  //   const hashedPassword = await bcrypt.hash(password, 10);
+  
+  //   const user = new this.userModel({
+  //     ...createUserDto,
+  //     password: hashedPassword,
+  //     profileImage: profileImageUrl,
+  //     degreeCertificate: degreeCertificateUrl,
+  //     currentPracticeLicense: currentPracticeLicenseUrl,
+  //     policyAgreement: role === UserRole.MEDICAL_PRACTITIONER ? true : createUserDto.policyAgreement,
+  //   });
+
+  //   const createdUser = await user.save();
+
+  //   const otp = Math.floor(100000 + Math.random() * 900000).toString();
+  //   const otpToken = this.jwtService.sign(
+  //     { userId: createdUser._id, otp },
+  //     {
+  //       secret: this.configService.get<string>('JWT_SECRET'),
+  //       expiresIn: '30m',
+  //     }
+  //   );
+  //   const frontendUrl = this.configService.get<string>('FRONTEND_URL');
+  //   const otpLink = `${frontendUrl}/api/signup/verify-email?token=${encodeURIComponent(otpToken)}&otp=${encodeURIComponent(otp)}`;
+  
+  //   await this.emailService.sendConfirmationEmail(createdUser.email, createUserDto.firstName, otp, otpLink);
+  
+  //   return {
+  //     message: 'Account created successfully. Please verify your email.',
+  //     token: otpToken,
+  //     otp,
+  //   };
+  // }
+  
+  
+
   async createUser(
-    files: { 
-      profileImage?: Express.Multer.File[]; 
-      degreeCertificate?: Express.Multer.File[]; 
+    files: {
+      profileImage?: Express.Multer.File[];
+      degreeCertificate?: Express.Multer.File[];
       currentPracticeLicense?: Express.Multer.File[];
-    }, 
+    },
     createUserDto: CreateUserDto
   ): Promise<{ message: string; token: string; otp: string }> {
-  
-    let profileImageUrl = '';
-    let degreeCertificateUrl = '';
-    let currentPracticeLicenseUrl = '';
-  
-    // Upload and assign each file separately
-    if (files.profileImage && files.profileImage.length > 0) {
-      const uploadedProfile = await this.cloudinaryService.uploadFile(files.profileImage[0]);
-      profileImageUrl = uploadedProfile.secure_url;
+    
+    if (!files.profileImage || files.profileImage.length === 0) {
+      throw new BadRequestException('Profile Image is required.');
     }
   
-    if (files.degreeCertificate && files.degreeCertificate.length > 0) {
-      const uploadedDegree = await this.cloudinaryService.uploadFile(files.degreeCertificate[0]);
-      degreeCertificateUrl = uploadedDegree.secure_url;
-    }
+    // Upload files concurrently for better performance
+    const [profileImageUpload, degreeUpload, licenseUpload] = await Promise.all([
+      this.cloudinaryService.uploadFile(files.profileImage?.[0]),
+      files.degreeCertificate?.[0] ? this.cloudinaryService.uploadFile(files.degreeCertificate[0]) : null,
+      files.currentPracticeLicense?.[0] ? this.cloudinaryService.uploadFile(files.currentPracticeLicense[0]) : null,
+    ]);
   
-    if (files.currentPracticeLicense && files.currentPracticeLicense.length > 0) {
-      const uploadedLicense = await this.cloudinaryService.uploadFile(files.currentPracticeLicense[0]);
-      currentPracticeLicenseUrl = uploadedLicense.secure_url;
-    }
+    const profileImageUrl = profileImageUpload.secure_url;
+    const degreeCertificateUrl = degreeUpload?.secure_url || '';
+    const currentPracticeLicenseUrl = licenseUpload?.secure_url || '';
   
-    const { email, role, password} = createUserDto;
+    const { email, role, password, phoneNumber } = createUserDto;
   
     const existingUser = await this.userModel.findOne({ role, email: email.toLowerCase() }).exec();
     if (existingUser) {
       throw new ConflictException('User with the same email already exists');
     }
 
-    if (role === UserRole.CLIENT && createUserDto.bankDetails) {
-      throw new BadRequestException('Bank Details not required for this role.');
+    const existingUserPhoneNumber = await this.userModel.findOne({ role, phoneNumber: phoneNumber.trim() }).exec();
+    if (existingUserPhoneNumber) {
+      throw new ConflictException('User with the same Phone Number already exists');
     }
   
-    if (role === UserRole.MEDICAL_PRACTITIONER) {
-      if (!degreeCertificateUrl || !currentPracticeLicenseUrl || !createUserDto.bankDetails) {
-        throw new BadRequestException(
-          'Medical Practitioner must provide Degree Certificate, Current Practice License, and Bank Details.',
-        );
-      }
+    if (role === UserRole.CLIENT && degreeCertificateUrl ) {
+      throw new BadRequestException('Degree Certificate not required for this role.')
     }
-
-    if (role === UserRole.EMERGENCY_SERVICES) {
-      if (!createUserDto.hospitalName|| !createUserDto.officerInCharge || !createUserDto.bankDetails) {
-        throw new BadRequestException(
-          'Hospital Name and Officer In Charge and Bank Details be must provide.',
-        );
+    if (role === UserRole.CLIENT && currentPracticeLicenseUrl) {
+      throw new BadRequestException('Current Practice License not required for this role.')
+    }
+    // Role-based validation
+    const validationRules = {
+      [UserRole.CLIENT]: {
+        prohibitedFields: ['bankDetails', 'degreeCertificateUrl', 'currentPracticeLicenseUrl', 'specialty', 'ward', 'localGovernmentArea', 'hospitalName', 'officerInCharge', 'languageProficiency'],
+        requiredFields: ['firstName', 'lastName', 'email', 'password', 'phoneNumber', 'gender', 'maritalStatus', 'dateOfBirth', 'countryOfResidence', 'countryOfOrigin', 'stateOfResidence', 'stateOfOrigin'],
+      },
+      [UserRole.MEDICAL_PRACTITIONER]: {
+        prohibitedFields: ['ward', 'localGovernmentArea', 'hospitalName', 'officerInCharge'],
+        requiredFields: ['firstName', 'lastName', 'email', 'password', 'phoneNumber', 'specialty', 'gender', 'maritalStatus', 'dateOfBirth', 'countryOfResidence', 'countryOfOrigin', 'stateOfResidence', 'stateOfOrigin', 'languageProficiency', 'bankDetails'],
+        mustHaveFiles: { degreeCertificateUrl, currentPracticeLicenseUrl },
+      },
+      [UserRole.EMERGENCY_SERVICES]: {
+        prohibitedFields: ['firstName', 'lastName', 'email', 'password', 'specialty', 'languageProficiency', 'gender', 'maritalStatus', 'dateOfBirth'],
+        requiredFields: ['hospitalName', 'officerInCharge', 'bankDetails', 'ward', 'localGovernmentArea', 'stateOfResidence'],
+      },
+    };
+  
+    const rules = validationRules[role];
+    if (rules) {
+      // Check prohibited fields
+      for (const field of rules.prohibitedFields || []) {
+        if (createUserDto[field]) {
+          throw new BadRequestException(`${field.replace(/([A-Z])/g, ' $1')} is not required for this role.`);
+        }
+      }
+  
+      // Check required fields
+      for (const field of rules.requiredFields || []) {
+        if (!createUserDto[field]) {
+          throw new BadRequestException(`${field.replace(/([A-Z])/g, ' $1')} is required.`);
+        }
+      }
+  
+      // Check required files for certain roles
+      if (rules.mustHaveFiles) {
+        for (const [key, value] of Object.entries(rules.mustHaveFiles)) {
+          if (!value) {
+            throw new BadRequestException(`${key.replace(/([A-Z])/g, ' $1')} is required.`);
+          }
+        }
       }
     }
   
+    // Hash password securely
     const hashedPassword = await bcrypt.hash(password, 10);
   
+    // Create user object
     const user = new this.userModel({
       ...createUserDto,
       password: hashedPassword,
       profileImage: profileImageUrl,
       degreeCertificate: degreeCertificateUrl,
       currentPracticeLicense: currentPracticeLicenseUrl,
+      policyAgreement: role === UserRole.MEDICAL_PRACTITIONER ? true : createUserDto.policyAgreement,
     });
-
+  
     const createdUser = await user.save();
-
+  
+    // Generate OTP and sign JWT token
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const otpToken = this.jwtService.sign(
       { userId: createdUser._id, otp },
-      {
-        secret: this.configService.get<string>('JWT_SECRET'),
-        expiresIn: '30m',
-      }
+      { secret: this.configService.get<string>('JWT_SECRET'), expiresIn: '30m' }
     );
-
   
     const frontendUrl = this.configService.get<string>('FRONTEND_URL');
     const otpLink = `${frontendUrl}/api/signup/verify-email?token=${encodeURIComponent(otpToken)}&otp=${encodeURIComponent(otp)}`;
   
+    // Send email verification
     await this.emailService.sendConfirmationEmail(createdUser.email, createUserDto.firstName, otp, otpLink);
   
     return {
@@ -111,7 +364,7 @@ export class UserService {
     };
   }
   
-  
+
 
   async verifyEmail(token?: string, otp?: string): Promise<any> {
     if (!token) {

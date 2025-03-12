@@ -17,83 +17,178 @@ export class UserController {
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
   ) {}
+  // @Post('create')
+  // @ApiOperation({ summary: 'Create a new user' })
+  // @ApiResponse({ status: 201, description: 'User created successfully' })
+  // @ApiResponse({ status: 400, description: 'Failed to create user' })
+  // @ApiConsumes('multipart/form-data') 
+  // @ApiBody({
+  //   schema: {
+  //     type: 'object',
+  //     properties: {
+  //       firstName: { type: 'string' },
+  //       lastName: { type: 'string' },
+  //       otherName: { type: 'string', nullable: true },
+  //       email: { type: 'string', format: 'email' },
+  //       password: { type: 'string' },
+  //       role: { type: 'string', enum: ['client', 'medical_practitioner', 'emergency_services', 'real_estate_services', 'insurance_services'] },
+  //       gender: { type: 'string', nullable: true },
+  //       dateOfBirth: { type: 'string', format: 'date', nullable: true },
+  //       maritalStatus: { type: 'string', nullable: true },
+  //       countryOrigin: { type: 'string', nullable: true },
+  //       phoneNumber: { type: 'string', nullable: true },
+  //       stateOfOrigin: { type: 'string', nullable: true },
+  //       countryOfResidence: { type: 'string', nullable: true },
+  //       stateOfResidence: { type: 'string', nullable: true },
+  //       profileImage: { type: 'string', format: 'binary', nullable: true }, 
+  //       degreeCertificate: { type: 'string', format: 'binary', nullable: true },
+  //       currentPracticeLicense: { type: 'string', format: 'binary', nullable: true },
+  //       bankDetails: {
+  //         type: 'object',
+  //         properties: {
+  //           bankName: { type: 'string' },
+  //           accountName: { type: 'string' },
+  //           accountNumber: { type: 'string' },
+  //         },
+  //         nullable: true,
+  //       },
+  //     },
+  //     required: ['firstName', 'lastName', 'email', 'password', 'role'],
+  //   },
+  // })
+  // @UseInterceptors(
+  //   FileFieldsInterceptor([
+  //     { name: 'profileImage', maxCount: 1 },
+  //     { name: 'degreeCertificate', maxCount: 1 },
+  //     { name: 'currentPracticeLicense', maxCount: 1 },
+  //   ]),
+  // )
+  // @Post('create')
+  // async createUser(
+  //   @Body() createUserDto: CreateUserDto,
+  //   @UploadedFiles() files: { 
+  //     profileImage?: Express.Multer.File[]; 
+  //     degreeCertificate?: Express.Multer.File[]; 
+  //     currentPracticeLicense?: Express.Multer.File[];
+  //   }
+  // ): Promise<{ message: string; token: string; otp: string }> {
+
+
+  //   const validatedDto = plainToInstance(CreateUserDto, createUserDto);    
+  //   const errors = validateSync(validatedDto, { whitelist: true, forbidNonWhitelisted: true });
+  
+  //   if (errors.length > 0) {
+  //     const formattedErrors = errors.map(error => ({
+  //       property: error.property,
+  //       constraints: error.constraints,
+  //     }));
+  
+  //     throw new BadRequestException({
+  //       message: 'Invalid input fields',
+  //       errors: formattedErrors,
+  //     });
+  //   }
+  //   return await this.userService.createUser(files, createUserDto);
+  // }
+
+
+
   @Post('create')
-  @ApiOperation({ summary: 'Create a new user' })
-  @ApiResponse({ status: 201, description: 'User created successfully' })
-  @ApiResponse({ status: 400, description: 'Failed to create user' })
-  @ApiConsumes('multipart/form-data') 
-  @ApiBody({
-    schema: {
-      type: 'object',
-      properties: {
-        firstName: { type: 'string' },
-        lastName: { type: 'string' },
-        otherName: { type: 'string', nullable: true },
-        email: { type: 'string', format: 'email' },
-        password: { type: 'string' },
-        role: { type: 'string', enum: ['client', 'medical_practitioner', 'emergency_services', 'real_estate_services', 'insurance_services'] },
-        gender: { type: 'string', nullable: true },
-        dateOfBirth: { type: 'string', format: 'date', nullable: true },
-        maritalStatus: { type: 'string', nullable: true },
-        countryOrigin: { type: 'string', nullable: true },
-        phoneNumber: { type: 'string', nullable: true },
-        stateOfOrigin: { type: 'string', nullable: true },
-        countryOfResidence: { type: 'string', nullable: true },
-        stateOfResidence: { type: 'string', nullable: true },
-        profileImage: { type: 'string', format: 'binary', nullable: true }, 
-        degreeCertificate: { type: 'string', format: 'binary', nullable: true },
-        currentPracticeLicense: { type: 'string', format: 'binary', nullable: true },
-        bankDetails: {
-          type: 'object',
-          properties: {
-            bankName: { type: 'string' },
-            accountName: { type: 'string' },
-            accountNumber: { type: 'string' },
-          },
-          nullable: true,
-        },
+@ApiOperation({ summary: 'Create a new user' })
+@ApiResponse({ status: 201, description: 'User created successfully' })
+@ApiResponse({ status: 400, description: 'Failed to create user' })
+@ApiConsumes('multipart/form-data') 
+@ApiBody({
+  schema: {
+    type: 'object',
+    properties: {
+      firstName: { type: 'string' },
+      lastName: { type: 'string' },
+      otherName: { type: 'string', nullable: true },
+      email: { type: 'string', format: 'email' },
+      password: { type: 'string' },
+      role: { 
+        type: 'string', 
+        enum: [
+          'client', 
+          'medical_practitioner', 
+          'emergency_services', 
+          'real_estate_services', 
+          'insurance_services'
+        ] 
       },
-      required: ['firstName', 'lastName', 'email', 'password', 'role'],
+      gender: { type: 'string', nullable: true },
+      dateOfBirth: { type: 'string', format: 'date', nullable: true },
+      maritalStatus: { type: 'string', nullable: true },
+      countryOfOrigin: { type: 'string', nullable: true },
+      phoneNumber: { type: 'string', nullable: true },
+      stateOfOrigin: { type: 'string', nullable: true },
+      countryOfResidence: { type: 'string', nullable: true },
+      stateOfResidence: { type: 'string', nullable: true },
+      profileImage: { type: 'string', format: 'binary', nullable: true }, 
+      degreeCertificate: { type: 'string', format: 'binary', nullable: true },
+      currentPracticeLicense: { type: 'string', format: 'binary', nullable: true },
+      bankDetails: {
+        type: 'object',
+        properties: {
+          bankName: { type: 'string' },
+          accountName: { type: 'string' },
+          accountNumber: { type: 'string' },
+        },
+        nullable: true,
+      },
+      languageProficiency: {
+        type: 'array',
+        items: { type: 'string' },
+        nullable: true,
+        description: 'List of languages the user is proficient in',
+      },
+      specialty: { 
+        type: 'string', 
+        nullable: true, 
+        description: 'Specialization of the user (required for medical practitioners)' 
+      }
     },
-  })
-  @UseInterceptors(
-    FileFieldsInterceptor([
-      { name: 'profileImage', maxCount: 1 },
-      { name: 'degreeCertificate', maxCount: 1 },
-      { name: 'currentPracticeLicense', maxCount: 1 },
-    ]),
-  )
-  @Post('create')
-  async createUser(
-    @Body() createUserDto: CreateUserDto,
-    @UploadedFiles() files: { 
-      profileImage?: Express.Multer.File[]; 
-      degreeCertificate?: Express.Multer.File[]; 
-      currentPracticeLicense?: Express.Multer.File[];
-    }
-  ): Promise<{ message: string; token: string; otp: string }> {
+    required: ['firstName', 'lastName', 'email', 'password', 'role'],
+  },
+})
+@UseInterceptors(
+  FileFieldsInterceptor([
+    { name: 'profileImage', maxCount: 1 },
+    { name: 'degreeCertificate', maxCount: 1 },
+    { name: 'currentPracticeLicense', maxCount: 1 },
+  ]),
+)
 
-    
-    const validatedDto = plainToInstance(CreateUserDto, createUserDto);    
-    const errors = validateSync(validatedDto, { whitelist: true, forbidNonWhitelisted: true });
-  
-    if (errors.length > 0) {
-      const formattedErrors = errors.map(error => ({
-        property: error.property,
-        constraints: error.constraints,
-      }));
-  
-      throw new BadRequestException({
-        message: 'Invalid input fields',
-        errors: formattedErrors,
-      });
-    }
-  
-    return await this.userService.createUser(files, createUserDto);
+
+@Post('create')
+async createUser(
+  @Body() createUserDto: CreateUserDto,
+  @UploadedFiles() files: { 
+    profileImage?: Express.Multer.File[]; 
+    degreeCertificate?: Express.Multer.File[]; 
+    currentPracticeLicense?: Express.Multer.File[];
   }
-  
-  
+): Promise<{ message: string; token: string; otp: string }> {
 
+  const validatedDto = plainToInstance(CreateUserDto, createUserDto);    
+  const errors = validateSync(validatedDto, { whitelist: true, forbidNonWhitelisted: true });
+
+  if (errors.length > 0) {
+    const formattedErrors = errors.map(error => ({
+      property: error.property,
+      constraints: error.constraints,
+    }));
+
+    throw new BadRequestException({
+      message: 'Invalid input fields',
+      errors: formattedErrors,
+    });
+  }
+  return await this.userService.createUser(files, createUserDto);
+}
+
+  
 
 
   @Get('verify-email')

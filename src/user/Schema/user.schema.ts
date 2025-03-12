@@ -63,7 +63,7 @@ dateOfBirth: string;
 phoneNumber: string;
 
 @Prop()
-countryOrigin: string;
+countryOfOrigin: string;
 
 @Prop()
 stateOfOrigin: string;
@@ -92,11 +92,13 @@ degreeCertificate?: string;
 currentPracticeLicense?: string;
 
 
-@Prop({ type: BankDetails })
-bankDetails?: BankDetails;
+@Prop({ type: [BankDetails], default: [] }) // Store as an array
+bankDetails?: BankDetails[];
 
 @Prop()
 languageProficiency?: Array<string>;
+@Prop()
+specialty: string;
 
 @Prop()
 hospitalName: string;
@@ -107,6 +109,9 @@ alternatePhoneNumber: string;
 
 @Prop()
 localGovernmentArea: string;
+
+@Prop({ type: Boolean, default: false })
+policyAgreement: boolean;
 
 @Prop()
 ward: string;

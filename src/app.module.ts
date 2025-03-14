@@ -17,6 +17,7 @@ import * as cloudinary from 'cloudinary';
 // import { PaymentModule } from './payment/payment.module';
 // import { WithdrawalModule } from './withdrawal/withdrawal.module';
 import { UserModule } from './user/user.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -33,27 +34,14 @@ import { UserModule } from './user/user.module';
       },
     }),
     UserModule,
-    // UserModule,
-    // ScheduleModule.forRoot(),
-
-    // EmailModule,
-    // CloudinaryModule,
-    // NotificationModule,
-    // ContentModule,
-    // ChatModule,
-    // PersonalGroupChatModule,
-    // SearchModule,
-    // PaymentModule,
-    // WithdrawalModule,
+    AuthModule,
   ],
   controllers: [],
   providers: [
-    // EmailService,
     {
       provide: APP_PIPE,
       useClass: ValidationPipe,
     },
-    // RenderService,
   ],
 })
 export class AppModule {

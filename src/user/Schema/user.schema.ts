@@ -92,7 +92,7 @@ degreeCertificate?: string;
 currentPracticeLicense?: string;
 
 
-@Prop({ type: [BankDetails], default: [] }) // Store as an array
+@Prop({ type: [BankDetails], default: [] }) 
 bankDetails?: BankDetails[];
 
 @Prop()

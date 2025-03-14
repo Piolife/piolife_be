@@ -1,5 +1,5 @@
-import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiQuery, ApiConsumes } from '@nestjs/swagger';
-import { Body, Controller, Get, Post, Query, BadRequestException, UnauthorizedException, UsePipes, ValidationPipe, UploadedFile, UseInterceptors, UploadedFiles } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiQuery, ApiConsumes, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
+import { Body, Controller, Get, Post, Query, BadRequestException, UnauthorizedException, UsePipes, ValidationPipe, UploadedFile, UseInterceptors, UploadedFiles, Param, UseGuards } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto, LoginDto } from './dto/user.dto';
 import { JwtService } from '@nestjs/jwt';
@@ -8,6 +8,8 @@ import * as bcrypt from 'bcryptjs';
 import { FileFieldsInterceptor, } from '@nestjs/platform-express';
 import { validateSync } from 'class-validator';
 import { plainToInstance } from 'class-transformer';
+import { User } from './Schema/user.schema';
+import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 
 @ApiTags(' User Auth')
 @Controller('users')
@@ -17,81 +19,6 @@ export class UserController {
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
   ) {}
-  // @Post('create')
-  // @ApiOperation({ summary: 'Create a new user' })
-  // @ApiResponse({ status: 201, description: 'User created successfully' })
-  // @ApiResponse({ status: 400, description: 'Failed to create user' })
-  // @ApiConsumes('multipart/form-data') 
-  // @ApiBody({
-  //   schema: {
-  //     type: 'object',
-  //     properties: {
-  //       firstName: { type: 'string' },
-  //       lastName: { type: 'string' },
-  //       otherName: { type: 'string', nullable: true },
-  //       email: { type: 'string', format: 'email' },
-  //       password: { type: 'string' },
-  //       role: { type: 'string', enum: ['client', 'medical_practitioner', 'emergency_services', 'real_estate_services', 'insurance_services'] },
-  //       gender: { type: 'string', nullable: true },
-  //       dateOfBirth: { type: 'string', format: 'date', nullable: true },
-  //       maritalStatus: { type: 'string', nullable: true },
-  //       countryOrigin: { type: 'string', nullable: true },
-  //       phoneNumber: { type: 'string', nullable: true },
-  //       stateOfOrigin: { type: 'string', nullable: true },
-  //       countryOfResidence: { type: 'string', nullable: true },
-  //       stateOfResidence: { type: 'string', nullable: true },
-  //       profileImage: { type: 'string', format: 'binary', nullable: true }, 
-  //       degreeCertificate: { type: 'string', format: 'binary', nullable: true },
-  //       currentPracticeLicense: { type: 'string', format: 'binary', nullable: true },
-  //       bankDetails: {
-  //         type: 'object',
-  //         properties: {
-  //           bankName: { type: 'string' },
-  //           accountName: { type: 'string' },
-  //           accountNumber: { type: 'string' },
-  //         },
-  //         nullable: true,
-  //       },
-  //     },
-  //     required: ['firstName', 'lastName', 'email', 'password', 'role'],
-  //   },
-  // })
-  // @UseInterceptors(
-  //   FileFieldsInterceptor([
-  //     { name: 'profileImage', maxCount: 1 },
-  //     { name: 'degreeCertificate', maxCount: 1 },
-  //     { name: 'currentPracticeLicense', maxCount: 1 },
-  //   ]),
-  // )
-  // @Post('create')
-  // async createUser(
-  //   @Body() createUserDto: CreateUserDto,
-  //   @UploadedFiles() files: { 
-  //     profileImage?: Express.Multer.File[]; 
-  //     degreeCertificate?: Express.Multer.File[]; 
-  //     currentPracticeLicense?: Express.Multer.File[];
-  //   }
-  // ): Promise<{ message: string; token: string; otp: string }> {
-
-
-  //   const validatedDto = plainToInstance(CreateUserDto, createUserDto);    
-  //   const errors = validateSync(validatedDto, { whitelist: true, forbidNonWhitelisted: true });
-  
-  //   if (errors.length > 0) {
-  //     const formattedErrors = errors.map(error => ({
-  //       property: error.property,
-  //       constraints: error.constraints,
-  //     }));
-  
-  //     throw new BadRequestException({
-  //       message: 'Invalid input fields',
-  //       errors: formattedErrors,
-  //     });
-  //   }
-  //   return await this.userService.createUser(files, createUserDto);
-  // }
-
-
 
   @Post('create')
 @ApiOperation({ summary: 'Create a new user' })
@@ -129,11 +56,14 @@ export class UserController {
       degreeCertificate: { type: 'string', format: 'binary', nullable: true },
       currentPracticeLicense: { type: 'string', format: 'binary', nullable: true },
       bankDetails: {
-        type: 'object',
-        properties: {
-          bankName: { type: 'string' },
-          accountName: { type: 'string' },
-          accountNumber: { type: 'string' },
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            bankName: { type: 'string' },
+            accountName: { type: 'string' },
+            accountNumber: { type: 'string' },
+          },
         },
         nullable: true,
       },
@@ -314,5 +244,18 @@ async createUser(
     @Body('confirmPassword') confirmPassword: string,
   ) {
     return this.userService.resetPassword(resetToken, password, confirmPassword);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get(':id')
+  @ApiBearerAuth() // Indicates the endpoint requires authentication
+  @ApiOperation({ summary: 'Get a user by ID' }) // Describes the endpoint
+  @ApiParam({ name: 'id', required: true, description: 'User ID' }) // Describes the parameter
+  @ApiResponse({ status: 200, description: 'User retrieved successfully', type: User }) // Success response
+  @ApiResponse({ status: 400, description: 'Invalid User ID' }) // Bad request response
+  @ApiResponse({ status: 401, description: 'Unauthorized' }) // Unauthorized response
+  @ApiResponse({ status: 404, description: 'User not found' }) // Not found response
+  async getUser(@Param('id') id: string): Promise<User> {
+    return this.userService.getUserById(id);
   }
 }

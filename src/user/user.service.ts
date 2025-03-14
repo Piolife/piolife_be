@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, Injectable, Logger, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, InternalServerErrorException, Logger, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User, UserDocument } from './Schema/user.schema';
@@ -328,6 +328,36 @@ export class UserService {
         }
       }
     }
+
+    if (typeof createUserDto.bankDetails === 'string') {
+      try {
+        createUserDto.bankDetails = JSON.parse(createUserDto.bankDetails);
+      } catch (error) {
+        throw new BadRequestException('Invalid bank details format');
+      }
+    }
+
+    // Ensure it's an array
+    if (!Array.isArray(createUserDto.bankDetails)) {
+      throw new BadRequestException('Bank details should be an array');
+    }
+
+    for (const bankDetail of createUserDto.bankDetails) {
+      if (
+        !bankDetail.bankName ||
+        !bankDetail.accountName ||
+        !bankDetail.accountNumber
+      ) {
+        throw new BadRequestException(
+          'Each bank detail must have bankName, accountName, and accountNumber'
+        );
+      }
+      // Optional: Ensure accountNumber is a valid number (assuming it's numeric)
+      if (!/^\d+$/.test(bankDetail.accountNumber)) {
+        throw new BadRequestException('Account number must be numeric');
+      }
+    }
+  
   
     // Hash password securely
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -535,5 +565,31 @@ export class UserService {
       throw new UnauthorizedException('Invalid or expired reset token.');
     }
   }
+
+
+  async getUserById(userId: string): Promise<User> {
+    if (!userId) {
+      throw new BadRequestException('User ID is required');
+    }
+  
+    const user = await this.userModel.findById(userId).select('-password').exec();
+  
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+  
+    // Ensure bankDetails is properly parsed
+    if (user.bankDetails && typeof user.bankDetails === 'string') {
+      try {
+        user.bankDetails = JSON.parse(user.bankDetails);
+      } catch (error) {
+        throw new InternalServerErrorException('Invalid bank details format');
+      }
+    }
+  
+    return user;
+  }
+  
+  
 
 }

@@ -53,6 +53,10 @@ export class User {
   @Prop()
   profileImage: string;
 
+
+  @Prop()
+  profilePicture: string;
+
 @Prop()
 maritalStatus: string;
 

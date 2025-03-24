@@ -56,6 +56,10 @@ export class CreateUserDto {
 
   @IsString()
   @IsOptional()
+  profilePicture: string;
+
+  @IsString()
+  @IsOptional()
   maritalStatus?: string;
 
   @IsString()

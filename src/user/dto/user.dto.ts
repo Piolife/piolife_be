@@ -70,7 +70,7 @@ export class CreateUserDto {
   @IsNotEmpty()
   phoneNumber: string;
 
-
+  
   @IsString()
   @IsOptional()
   stateOfOrigin: string;

@@ -90,33 +90,54 @@ export class UserController {
   ]),
 )
 
+// @Post('create')
+// async createUser(
+//   @Body() createUserDto: CreateUserDto,
+//   @UploadedFiles() files: { 
+//     profileImage?: Express.Multer.File[]; 
+//     degreeCertificate?: Express.Multer.File[]; 
+//     currentPracticeLicense?: Express.Multer.File[];
+//   }
+// ): Promise<{ message: string; token: string; otp: string }> {
+
+//   const validatedDto = plainToInstance(CreateUserDto, createUserDto);    
+//   const errors = validateSync(validatedDto, { whitelist: true, forbidNonWhitelisted: true });
+
+//   if (errors.length > 0) {
+//     const formattedErrors = errors.map(error => ({
+//       property: error.property,
+//       constraints: error.constraints,
+//     }));
+
+//     throw new BadRequestException({
+//       message: 'Invalid input fields',
+//       errors: formattedErrors,
+//     });
+//   }
+//   return await this.userService.createUser(files, createUserDto);
+// }
+
+
 
 @Post('create')
-async createUser(
-  @Body() createUserDto: CreateUserDto,
-  @UploadedFiles() files: { 
-    profileImage?: Express.Multer.File[]; 
-    degreeCertificate?: Express.Multer.File[]; 
-    currentPracticeLicense?: Express.Multer.File[];
+  @ApiOperation({ summary: 'Register a new user' })
+  @ApiBody({ type: CreateUserDto })
+  @ApiResponse({
+    status: 201,
+    description: 'User created successfully',
+    schema: {
+      example: {
+        message: 'Account created successfully. Please verify your email.',
+        token: 'your-jwt-token',
+        otp: '123456',
+      },
+    },
+  })
+  @ApiResponse({ status: 400, description: 'Bad request or validation error' })
+  @ApiResponse({ status: 409, description: 'User already exists' })
+  async createUser(@Body() createUserDto: CreateUserDto) {
+    return this.userService.createUser(createUserDto);
   }
-): Promise<{ message: string; token: string; otp: string }> {
-
-  const validatedDto = plainToInstance(CreateUserDto, createUserDto);    
-  const errors = validateSync(validatedDto, { whitelist: true, forbidNonWhitelisted: true });
-
-  if (errors.length > 0) {
-    const formattedErrors = errors.map(error => ({
-      property: error.property,
-      constraints: error.constraints,
-    }));
-
-    throw new BadRequestException({
-      message: 'Invalid input fields',
-      errors: formattedErrors,
-    });
-  }
-  return await this.userService.createUser(files, createUserDto);
-}
 
   
 
@@ -248,13 +269,13 @@ async createUser(
 
   @UseGuards(JwtAuthGuard)
   @Get(':id')
-  @ApiBearerAuth() // Indicates the endpoint requires authentication
-  @ApiOperation({ summary: 'Get a user by ID' }) // Describes the endpoint
-  @ApiParam({ name: 'id', required: true, description: 'User ID' }) // Describes the parameter
-  @ApiResponse({ status: 200, description: 'User retrieved successfully', type: User }) // Success response
-  @ApiResponse({ status: 400, description: 'Invalid User ID' }) // Bad request response
-  @ApiResponse({ status: 401, description: 'Unauthorized' }) // Unauthorized response
-  @ApiResponse({ status: 404, description: 'User not found' }) // Not found response
+  @ApiBearerAuth() 
+  @ApiOperation({ summary: 'Get a user by ID' }) 
+  @ApiParam({ name: 'id', required: true, description: 'User ID' }) 
+  @ApiResponse({ status: 200, description: 'User retrieved successfully', type: User }) 
+  @ApiResponse({ status: 400, description: 'Invalid User ID' }) 
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 404, description: 'User not found' }) 
   async getUser(@Param('id') id: string): Promise<User> {
     return this.userService.getUserById(id);
   }

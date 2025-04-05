@@ -18,8 +18,6 @@ import * as cloudinary from 'cloudinary';
 // import { WithdrawalModule } from './withdrawal/withdrawal.module';
 import { UserModule } from './user/user.module';
 import { AuthModule } from './auth/auth.module';
-import { WalletModule } from './wallet/wallet.module';
-import { LoanModule } from './loan/loan.module';
 
 @Module({
   imports: [
@@ -37,8 +35,8 @@ import { LoanModule } from './loan/loan.module';
     }),
     UserModule,
     AuthModule,
-    WalletModule,
-    LoanModule,
+    // WalletModule,
+    // LoanModule,
   ],
   controllers: [],
   providers: [

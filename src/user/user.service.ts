@@ -395,39 +395,86 @@ export class UserService {
   }
 
 
- async requestPasswordReset(
-    email: string,
-  ): Promise<{ message: string; otp: string; token: string }> {
-    // Find the user by email
-    const user = await this.userModel
-      .findOne({ email: { $regex: new RegExp(`^${email}$`, 'i') } })
-      .exec();
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
+//  async requestPasswordReset(
+//     email: string,
+//   ): Promise<{ message: string; otp: string; token: string }> {
+//     // Find the user by email
+//     const user = await this.userModel
+//       .findOne({ email: { $regex: new RegExp(`^${email}$`, 'i') } })
+//       .exec();
+//     if (!user) {
+//       throw new NotFoundException('User not found');
+//     }
 
-    // Generate a new OTP
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+//     // Generate a new OTP
+//     const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
-    // Create an OTP token
-    const otpToken = this.jwtService.sign(
-      { userId: user._id, otp },
-      {
-        secret: this.configService.get<string>('JWT_SECRET'),
-        expiresIn: '30m',
-      },
-    );
-    // Generate the OTP reset link
-    const otpLink = `${process.env.FRONTEND_URL}/users/reset-password?token=${encodeURIComponent(otpToken)}&otp=${encodeURIComponent(otp)}`;
+//     // Create an OTP token
+//     const otpToken = this.jwtService.sign(
+//       { userId: user._id, otp },
+//       {
+//         secret: this.configService.get<string>('JWT_SECRET'),
+//         expiresIn: '30m',
+//       },
+//     );
+//     // Generate the OTP reset link
+//     const otpLink = `${process.env.FRONTEND_URL}/users/reset-password?token=${encodeURIComponent(otpToken)}&otp=${encodeURIComponent(otp)}`;
 
-    // Send the OTP via email
-    await this.emailService.SendResetPassword(user.email, otp, otpLink);
-    return {
-      message: 'Password reset OTP has been sent successfully',
-      otp,
-      token: otpToken,
-    };
+//     // Send the OTP via email
+//     await this.emailService.SendResetPassword(user.email, otp, otpLink);
+//     return {
+//       message: 'Password reset OTP has been sent successfully',
+//       otp,
+//       token: otpToken,
+//     };
+//   }
+
+async requestPasswordReset(
+  email: string,
+  role: 'client' | 'medical_practitioner' | 'emergency_services' |'real_estate_services' | 'insurance_services',
+): Promise<{ message: string; otp: string; token: string }> {
+  // Find the user by email and role (case-insensitive email)
+  const user = await this.userModel
+    .findOne({
+      email: { $regex: new RegExp(`^${email}$`, 'i') },
+      role,
+    })
+    .exec();
+
+  if (!user) {
+    throw new NotFoundException(`Email and Role combination not found`);
   }
+
+  // Generate a new OTP
+  const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+  // Create a JWT token that includes email, role, and OTP
+  const otpToken = this.jwtService.sign(
+    {
+      email: user.email,
+      role: user.role,
+      otp,
+    },
+    {
+      secret: this.configService.get<string>('JWT_SECRET'),
+      expiresIn: '30m',
+    },
+  );
+
+  // Generate the OTP reset link
+  const otpLink = `${process.env.FRONTEND_URL}/users/reset-password?token=${encodeURIComponent(
+    otpToken,
+  )}&otp=${encodeURIComponent(otp)}`;
+
+  // Send the OTP via email
+  await this.emailService.SendResetPassword(user.email, otp, otpLink);
+
+  return {
+    message: 'Password reset OTP has been sent successfully',
+    otp,
+    token: otpToken,
+  };
+}
 
   async verifyResetPasswordOtp(
     token: string,

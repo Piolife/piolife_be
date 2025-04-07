@@ -1,5 +1,5 @@
 import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiQuery, ApiConsumes, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
-import { Body, Controller, Get, Post, Query, BadRequestException, UnauthorizedException, UsePipes, ValidationPipe, UploadedFile, UseInterceptors, UploadedFiles, Param, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, Query, BadRequestException, UnauthorizedException, UsePipes, ValidationPipe, UploadedFile, UseInterceptors, UploadedFiles, Param, UseGuards, HttpCode, HttpStatus } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto, LoginDto } from './dto/user.dto';
 import { JwtService } from '@nestjs/jwt';
@@ -176,7 +176,7 @@ export class UserController {
     }
 
     if (user.role !== role) {
-      throw new UnauthorizedException(`${email} has no account as a ${role}, Please signup as a ${role}`);
+      throw new UnauthorizedException(`Invalid email or password for selected role`);
     }
 
     const passwordMatch = await bcrypt.compare(password, user.password);
@@ -199,13 +199,10 @@ export class UserController {
       });
     }
     
-
     const token = this.jwtService.sign(
       { email: user.email, role: user.role },
       { secret: this.configService.get<string>('JWT_SECRET'), expiresIn: '24h' },
     );
-
-  
 
     return {
       message: 'Login successful',
@@ -223,7 +220,23 @@ export class UserController {
     };
   }
 
-  @Post('forgot-password')
+  // @Post('forgot-password')
+  // @ApiOperation({ summary: 'Request a password reset' })
+  // @ApiResponse({ status: 200, description: 'Password reset OTP sent successfully' })
+  // @ApiBody({
+  //   schema: {
+  //     type: 'object',
+  //     properties: {
+  //       email: { type: 'string', example: 'admin@example.com' },
+  //     },
+  //   },
+  // })
+  // async requestPasswordReset(@Body('email') email: string) {
+  //   return this.userService.requestPasswordReset(email);
+  // }
+
+
+  @Post('request-password-reset')
   @ApiOperation({ summary: 'Request a password reset' })
   @ApiResponse({ status: 200, description: 'Password reset OTP sent successfully' })
   @ApiBody({
@@ -231,12 +244,15 @@ export class UserController {
       type: 'object',
       properties: {
         email: { type: 'string', example: 'admin@example.com' },
+        role: { type: 'string', example: 'client' },
       },
     },
   })
-  async requestPasswordReset(@Body('email') email: string) {
-    return this.userService.requestPasswordReset(email);
-  }
+@HttpCode(HttpStatus.OK)
+async requestReset(@Body() body: { email: string; role: 'client' | 'medical_practitioner' }) {
+  return this.userService.requestPasswordReset(body.email, body.role);
+}
+
 
   @Post('verify-reset-otp')
   @ApiOperation({ summary: 'Verify password reset OTP' })

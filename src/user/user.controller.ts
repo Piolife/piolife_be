@@ -10,6 +10,7 @@ import { validateSync } from 'class-validator';
 import { plainToInstance } from 'class-transformer';
 import { User } from './Schema/user.schema';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
+import { EmailService } from 'src/services/email/email.sevice';
 
 @ApiTags(' User Auth')
 @Controller('users')
@@ -18,6 +19,9 @@ export class UserController {
     private readonly userService: UserService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
+  private emailService: EmailService,
+
+
   ) {}
 
   @Post('create')
@@ -118,7 +122,6 @@ export class UserController {
 // }
 
 
-
 @Post('create')
   @ApiOperation({ summary: 'Register a new user' })
   @ApiBody({ type: CreateUserDto })
@@ -138,9 +141,6 @@ export class UserController {
   async createUser(@Body() createUserDto: CreateUserDto) {
     return this.userService.createUser(createUserDto);
   }
-
-  
-
 
   @Get('verify-email')
   @ApiOperation({ summary: 'Verify user email' })
@@ -190,14 +190,22 @@ export class UserController {
         { userId: user._id, otp },
         { secret: this.configService.get<string>('JWT_SECRET'), expiresIn: '30m' },
       );
-
-      throw new UnauthorizedException('Account not Verified. A new verification code has been sent to your email.');
+    
+      await this.emailService.sendConfirmationEmail(user.email, user.firstName, otp, otpToken);
+    
+      throw new UnauthorizedException({
+        message: 'Account not Verified. A new verification code has been sent to your email.',
+        otpToken,
+      });
     }
+    
 
     const token = this.jwtService.sign(
       { email: user.email, role: user.role },
       { secret: this.configService.get<string>('JWT_SECRET'), expiresIn: '24h' },
     );
+
+  
 
     return {
       message: 'Login successful',

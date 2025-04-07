@@ -1,5 +1,5 @@
 import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiQuery, ApiConsumes, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
-import { Body, Controller, Get, Post, Query, BadRequestException, UnauthorizedException, UsePipes, ValidationPipe, UploadedFile, UseInterceptors, UploadedFiles, Param, UseGuards, HttpCode, HttpStatus } from '@nestjs/common';
+import { Body, Controller, Get, Post, Query, BadRequestException, UnauthorizedException, UsePipes, ValidationPipe, UploadedFile, UseInterceptors, UploadedFiles, Param, UseGuards, HttpCode, HttpStatus, ForbiddenException, HttpException } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto, LoginDto } from './dto/user.dto';
 import { JwtService } from '@nestjs/jwt';
@@ -192,11 +192,15 @@ export class UserController {
       );
     
       await this.emailService.sendConfirmationEmail(user.email, user.firstName, otp, otpToken);
-    
-      throw new UnauthorizedException({
-        message: 'Account not Verified. A new verification code has been sent to your email.',
-        otpToken,
-      });
+      throw new HttpException(
+        {
+          statusCode: HttpStatus.FORBIDDEN,
+          message: 'Account not verified. A new verification code has been sent to your email.',
+          otpToken,
+        },
+        HttpStatus.FORBIDDEN,
+      );
+      
     }
     
     const token = this.jwtService.sign(

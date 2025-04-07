@@ -288,9 +288,14 @@ export class UserService {
     // }
   
     const hashedPassword = await bcrypt.hash(password, 10);
+
+    const username = await this.generateUniqueUsername(createUserDto.firstName);
+
+
   
     const user = new this.userModel({
       ...createUserDto,
+      username,
       password: hashedPassword,
       profilePicture,
       degreeCertificate,
@@ -316,6 +321,20 @@ export class UserService {
       token: otpToken,
       otp,
     };
+  }
+  
+  private async generateUniqueUsername(firstName: string): Promise<string> {
+    const base = firstName.trim().toLowerCase().slice(0, 2); 
+    let username;
+    let exists = true;
+  
+    while (exists) {
+      const suffix = Math.floor(100000 + Math.random() * 900000); 
+      username = `${base}${suffix}`;
+      exists = (await this.userModel.exists({ username })) !== null;
+    }
+  
+    return username;
   }
   
 

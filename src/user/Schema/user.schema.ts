@@ -74,6 +74,8 @@ stateOfOrigin: string;
 
 @Prop()
 countryOfResidence: string;
+@Prop()
+username : string;
 
 @Prop()
 stateOfResidence: string;

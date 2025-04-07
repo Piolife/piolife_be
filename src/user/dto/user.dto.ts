@@ -29,6 +29,9 @@ export class CreateUserDto {
   @IsOptional()
   otherName?: string;
 
+  @IsOptional()
+  username?: string;
+
   @IsString()
   @IsEmail({}, { message: 'Invalid email format' })
   @IsNotEmpty()

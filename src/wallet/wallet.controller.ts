@@ -7,7 +7,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import * as dotenv from 'dotenv';
 import { ApiBody, ApiExcludeEndpoint, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { PaymentService } from './payment/payment.service';
+
 dotenv.config();
 
 const  PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY;
@@ -20,7 +20,7 @@ if (! PAYSTACK_SECRET_KEY ) {
 export class WalletController {
   private usedReferences: Set<string> = new Set();
 
-  constructor(private readonly walletService: WalletService, private readonly paymentService: PaymentService,
+  constructor(private readonly walletService: WalletService, 
       @InjectModel(User.name) private readonly userModel: Model<UserDocument>
   ) {}
 

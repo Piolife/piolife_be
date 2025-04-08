@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, Injectable, InternalServerErrorException, Logger, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, ConflictException, forwardRef, Inject, Injectable, InternalServerErrorException, Logger, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User, UserDocument } from './Schema/user.schema';
@@ -21,163 +21,11 @@ export class UserService {
   private readonly jwtService: JwtService,
   private readonly configService: ConfigService,
   private readonly cloudinaryService: CloudinaryService,
-  private readonly walletService: WalletService,
+  @Inject(forwardRef(() => WalletService)) private readonly walletService: WalletService,
+  // private readonly walletService: WalletService,
   private emailService: EmailService,
 
   ) {}
-
-  // async createUser(
-  //   files: {
-  //     profilePicture?: Express.Multer.File[];
-  //     degreeCertificate?: Express.Multer.File[];
-  //     currentPracticeLicense?: Express.Multer.File[];
-  //   },
-  //   createUserDto: CreateUserDto
-  // ): Promise<{ message: string; token: string; otp: string }> {
-    
-  //   if (!files.profilePicture || files.profilePicture.length === 0) {
-  //     throw new BadRequestException('Profile Image is required.');
-  //   }
-  
-  //   // Upload files concurrently for better performance
-  //   const [profilePictureUpload, degreeUpload, licenseUpload] = await Promise.all([
-  //     this.cloudinaryService.uploadFile(files.profilePicture?.[0]),
-  //     files.degreeCertificate?.[0] ? this.cloudinaryService.uploadFile(files.degreeCertificate[0]) : null,
-  //     files.currentPracticeLicense?.[0] ? this.cloudinaryService.uploadFile(files.currentPracticeLicense[0]) : null,
-  //   ]);
-  
-  //   const profilePictureUrl = profilePictureUpload.secure_url;
-  //   const degreeCertificateUrl = degreeUpload?.secure_url || '';
-  //   const currentPracticeLicenseUrl = licenseUpload?.secure_url || '';
-  
-  //   const { email, role, password, phoneNumber } = createUserDto;
-  
-  //   const existingUser = await this.userModel.findOne({ role, email: email.toLowerCase() }).exec();
-  //   if (existingUser) {
-  //     throw new ConflictException('User with the same email already exists');
-  //   }
-
-  //   const existingUserPhoneNumber = await this.userModel.findOne({ role, phoneNumber: phoneNumber.trim() }).exec();
-  //   if (existingUserPhoneNumber) {
-  //     throw new ConflictException('User with the same Phone Number already exists');
-  //   }
-  
-  //   if (role === UserRole.CLIENT && degreeCertificateUrl ) {
-  //     throw new BadRequestException('Degree Certificate not required for this role.')
-  //   }
-  //   if (role === UserRole.CLIENT && currentPracticeLicenseUrl) {
-  //     throw new BadRequestException('Current Practice License not required for this role.')
-  //   }
-  //   // Role-based validation
-  //   const validationRules = {
-  //     [UserRole.CLIENT]: {
-  //       prohibitedFields: ['bankDetails', 'degreeCertificateUrl', 'currentPracticeLicenseUrl', 'specialty', 'ward', 'localGovernmentArea', 'hospitalName', 'officerInCharge', 'languageProficiency'],
-  //       requiredFields: ['firstName', 'lastName', 'email', 'password', 'phoneNumber', 'gender', 'maritalStatus', 'dateOfBirth', 'countryOfResidence', 'countryOfOrigin', 'stateOfResidence', 'stateOfOrigin'],
-  //     },
-  //     [UserRole.MEDICAL_PRACTITIONER]: {
-  //       prohibitedFields: ['ward', 'localGovernmentArea', 'hospitalName', 'officerInCharge'],
-  //       requiredFields: ['firstName', 'lastName', 'email', 'password', 'phoneNumber', 'specialty', 'gender', 'maritalStatus', 'dateOfBirth', 'countryOfResidence', 'countryOfOrigin', 'stateOfResidence', 'stateOfOrigin', 'languageProficiency', 'bankDetails'],
-  //       mustHaveFiles: { degreeCertificateUrl, currentPracticeLicenseUrl },
-  //     },
-  //     [UserRole.EMERGENCY_SERVICES]: {
-  //       prohibitedFields: ['firstName', 'lastName', 'email', 'password', 'specialty', 'languageProficiency', 'gender', 'maritalStatus', 'dateOfBirth'],
-  //       requiredFields: ['hospitalName', 'officerInCharge', 'bankDetails', 'ward', 'localGovernmentArea', 'stateOfResidence'],
-  //     },
-  //   };
-  
-  //   const rules = validationRules[role];
-  //   if (rules) {
-  //     // Check prohibited fields
-  //     for (const field of rules.prohibitedFields || []) {
-  //       if (createUserDto[field]) {
-  //         throw new BadRequestException(`${field.replace(/([A-Z])/g, ' $1')} is not required for this role.`);
-  //       }
-  //     }
-  
-  //     // Check required fields
-  //     for (const field of rules.requiredFields || []) {
-  //       if (!createUserDto[field]) {
-  //         throw new BadRequestException(`${field.replace(/([A-Z])/g, ' $1')} is required.`);
-  //       }
-  //     }
-  
-  //     // Check required files for certain roles
-  //     if (rules.mustHaveFiles) {
-  //       for (const [key, value] of Object.entries(rules.mustHaveFiles)) {
-  //         if (!value) {
-  //           throw new BadRequestException(`${key.replace(/([A-Z])/g, ' $1')} is required.`);
-  //         }
-  //       }
-  //     }
-  //   }
-
-  //   if (typeof createUserDto.bankDetails === 'string') {
-  //     try {
-  //       createUserDto.bankDetails = JSON.parse(createUserDto.bankDetails);
-  //     } catch (error) {
-  //       throw new BadRequestException('Invalid bank details format');
-  //     }
-  //   }
-
-  //   // Ensure it's an array
-  //   if (!Array.isArray(createUserDto.bankDetails)) {
-  //     throw new BadRequestException('Bank details should be an array');
-  //   }
-
-  //   for (const bankDetail of createUserDto.bankDetails) {
-  //     if (
-  //       !bankDetail.bankName ||
-  //       !bankDetail.accountName ||
-  //       !bankDetail.accountNumber
-  //     ) {
-  //       throw new BadRequestException(
-  //         'Each bank detail must have bankName, accountName, and accountNumber'
-  //       );
-  //     }
-  //     // Optional: Ensure accountNumber is a valid number (assuming it's numeric)
-  //     if (!/^\d+$/.test(bankDetail.accountNumber)) {
-  //       throw new BadRequestException('Account number must be numeric');
-  //     }
-  //   }
-  
-  
-  //   // Hash password securely
-  //   const hashedPassword = await bcrypt.hash(password, 10);
-  
-  //   // Create user object
-  //   const user = new this.userModel({
-  //     ...createUserDto,
-  //     password: hashedPassword,
-  //     profilePicture: profilePictureUrl,
-  //     degreeCertificate: degreeCertificateUrl,
-  //     currentPracticeLicense: currentPracticeLicenseUrl,
-  //     policyAgreement: role === UserRole.MEDICAL_PRACTITIONER ? true : createUserDto.policyAgreement,
-  //   });
-  
-  //   const createdUser = await user.save();
-  //   // await this.walletService.createWallet(createdUser._id);
-
-  
-  //   // Generate OTP and sign JWT token
-  //   const otp = Math.floor(100000 + Math.random() * 900000).toString();
-  //   const otpToken = this.jwtService.sign(
-  //     { userId: createdUser._id, otp },
-  //     { secret: this.configService.get<string>('JWT_SECRET'), expiresIn: '30m' }
-  //   );
-  
-  //   const frontendUrl = this.configService.get<string>('FRONTEND_URL');
-  //   const otpLink = `${frontendUrl}/api/signup/verify-email?token=${encodeURIComponent(otpToken)}&otp=${encodeURIComponent(otp)}`;
-  
-  //   // Send email verification
-  //   await this.emailService.sendConfirmationEmail(createdUser.email, createUserDto.firstName, otp, otpLink);
-  
-  //   return {
-  //     message: 'Account created successfully. Please verify your email.',
-  //     token: otpToken,
-  //     otp,
-  //   };
-  // }
-  
 
   async createUser(
     createUserDto: CreateUserDto
@@ -277,7 +125,7 @@ export class UserService {
     });
   
     const createdUser = await user.save();
-    // await this.walletService.createWallet(createdUser._id);
+    await this.walletService.createWallet(createdUser._id);
   
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const otpToken = this.jwtService.sign(

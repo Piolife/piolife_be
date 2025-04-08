@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { UserController } from './user.controller';
 import { UserService } from './user.service';
 import { MongooseModule } from '@nestjs/mongoose';
@@ -12,6 +12,7 @@ import { WalletModule } from 'src/wallet/wallet.module';
 
 @Module({
   imports: [
+      forwardRef(() => WalletModule),
     MongooseModule.forFeature([{ name: 'User', schema: UserSchema }]),
     MongooseModule.forFeature([{ name: 'Wallet', schema: WalletSchema }]),
     CloudinaryModule,

@@ -23,11 +23,7 @@ export type WalletDocument = Wallet & Document;
 @Schema()
 export class Wallet {
 
-      @Prop({
-        type: String,
-        default: () => snowflakeIdGenerator.generate(),
-        required: true,
-      })
+      @Prop()
       _id: string;
   @Prop({ type: Number, default: 0 })
   balance: number;
@@ -43,3 +39,5 @@ export class Wallet {
 }
 
 export const WalletSchema = SchemaFactory.createForClass(Wallet);
+
+// export const WalletSchema = SchemaFactory.createForClass(WalletDocument);

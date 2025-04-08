@@ -18,6 +18,7 @@ import * as cloudinary from 'cloudinary';
 // import { WithdrawalModule } from './withdrawal/withdrawal.module';
 import { UserModule } from './user/user.module';
 import { AuthModule } from './auth/auth.module';
+import { WalletModule } from './wallet/wallet.module';
 
 @Module({
   imports: [
@@ -35,7 +36,7 @@ import { AuthModule } from './auth/auth.module';
     }),
     UserModule,
     AuthModule,
-    // WalletModule,
+    WalletModule,
     // LoanModule,
   ],
   controllers: [],

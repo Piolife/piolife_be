@@ -9,6 +9,8 @@ import * as bcrypt from 'bcryptjs';
 import { JwtService } from '@nestjs/jwt';
 import { CloudinaryService } from 'src/services/cloudinary/cloudinary.service';
 import { EmailService } from 'src/services/email/email.sevice';
+import { Wallet } from 'src/wallet/schema/wallet.schema';
+import { WalletService } from 'src/wallet/wallet.service';
 
 
 
@@ -19,6 +21,7 @@ export class UserService {
   private readonly jwtService: JwtService,
   private readonly configService: ConfigService,
   private readonly cloudinaryService: CloudinaryService,
+  private readonly walletService: WalletService,
   private emailService: EmailService,
 
   ) {}
@@ -290,9 +293,7 @@ export class UserService {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const username = await this.generateUniqueUsername(createUserDto.firstName);
-
-
-  
+    
     const user = new this.userModel({
       ...createUserDto,
       username,
@@ -304,6 +305,7 @@ export class UserService {
     });
   
     const createdUser = await user.save();
+    await this.walletService.createWallet(createdUser._id);
   
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const otpToken = this.jwtService.sign(

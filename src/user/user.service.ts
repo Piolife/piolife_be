@@ -9,9 +9,10 @@ import * as bcrypt from 'bcryptjs';
 import { JwtService } from '@nestjs/jwt';
 import { CloudinaryService } from 'src/services/cloudinary/cloudinary.service';
 import { EmailService } from 'src/services/email/email.sevice';
-
 import { WalletService } from 'src/wallet/wallet.service';
+import { SnowflakeIdGenerator } from 'utils/idGenerator';
 
+const snowflakeIdGenerator = new SnowflakeIdGenerator();
 
 
 @Injectable()
@@ -30,7 +31,7 @@ export class UserService {
   async createUser(
     createUserDto: CreateUserDto
   ): Promise<{ message: string; token: string; otp: string }> {
-    const {
+    let {
       email,
       role,
       password,
@@ -40,36 +41,26 @@ export class UserService {
       currentPracticeLicense,
     } = createUserDto;
   
+    // Normalize email and phone
+    email = email.toLowerCase().trim();
+    phoneNumber = phoneNumber.trim();
+  
     if (!profilePicture) {
       throw new BadRequestException('Profile Image is required.');
     }
   
+    // Check if email+role combo already exists
     const existingUser = await this.userModel.findOne({
       role,
-      email: email.toLowerCase(),
+      email,
     }).exec();
   
     if (existingUser) {
-      throw new ConflictException('User with the same email already exists');
+      throw new ConflictException('User with this email already exists for the selected role.');
     }
   
-    const existingUserPhoneNumber = await this.userModel.findOne({
-      role,
-      phoneNumber: phoneNumber.trim(),
-    }).exec();
-  
-    if (existingUserPhoneNumber) {
-      throw new ConflictException('User with the same Phone Number already exists');
-    }
-  
-    if (role === UserRole.CLIENT && degreeCertificate) {
-      throw new BadRequestException('Degree Certificate not required for this role.');
-    }
-  
-    if (role === UserRole.CLIENT && currentPracticeLicense) {
-      throw new BadRequestException('Current Practice License not required for this role.');
-    }
-  
+
+    // Role-based field validation
     const validationRules = {
       [UserRole.CLIENT]: {
         prohibitedFields: ['bankDetails', 'degreeCertificate', 'currentPracticeLicense', 'specialty', 'ward', 'localGovernmentArea', 'hospitalName', 'officerInCharge', 'languageProficiency'],
@@ -100,7 +91,6 @@ export class UserService {
           throw new BadRequestException(`${field.replace(/([A-Z])/g, ' $1')} is required.`);
         }
       }
-
   
       if (rules.mustHaveFiles) {
         for (const [key, value] of Object.entries(rules.mustHaveFiles)) {
@@ -110,14 +100,17 @@ export class UserService {
         }
       }
     }
-
+  
     const hashedPassword = await bcrypt.hash(password, 10);
-
+  
     const username = await this.generateUniqueUsername(createUserDto.firstName);
-    
+  
     const user = new this.userModel({
+      _id: snowflakeIdGenerator.generate(),
       ...createUserDto,
       username,
+      email, 
+      phoneNumber,
       password: hashedPassword,
       profilePicture,
       degreeCertificate,
@@ -126,18 +119,23 @@ export class UserService {
     });
   
     const createdUser = await user.save();
-    await this.walletService.createWallet(createdUser._id);
   
+   
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
+  
     const otpToken = this.jwtService.sign(
       { userId: createdUser._id, otp },
-      { secret: this.configService.get<string>('JWT_SECRET'), expiresIn: '30m' }
+      {
+        secret: this.configService.get<string>('JWT_SECRET'),
+        expiresIn: '30m',
+      }
     );
   
     const frontendUrl = this.configService.get<string>('FRONTEND_URL');
     const otpLink = `${frontendUrl}/api/signup/verify-email?token=${encodeURIComponent(otpToken)}&otp=${encodeURIComponent(otp)}`;
   
     await this.emailService.sendConfirmationEmail(createdUser.email, createUserDto.firstName, otp, otpLink);
+    await this.walletService.createWallet(createdUser._id);
   
     return {
       message: 'Account created successfully. Please verify your email.',
@@ -145,6 +143,7 @@ export class UserService {
       otp,
     };
   }
+  
   
   private async generateUniqueUsername(firstName: string): Promise<string> {
     const base = firstName.trim().toLowerCase().slice(0, 2); 

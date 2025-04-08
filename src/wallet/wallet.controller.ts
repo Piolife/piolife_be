@@ -26,7 +26,6 @@ export class WalletController {
   ) {}
 
 
-
   @ApiExcludeEndpoint()
   @Post(':userId/create')
   async createWallet(@Param('userId') userId: string): Promise<Wallet> {
@@ -138,12 +137,13 @@ private async validatePayment(reference: string): Promise<{ isPaymentValid: bool
     },
   })
 
-  @UseGuards(JwtAuthGuard)
+  // @UseGuards(JwtAuthGuard)
   @Get(':userId/balance')
-  async getWalletBalance(@Param('userId') userId: string): Promise<{ balance: number }> {
-    const walletBalance = await this.walletService.getWalletBalance(userId);
-    return { balance: walletBalance };
+  async getWalletBalance(@Param('userId') userId: string): Promise<{ balance: number, loanBalance: number }> {
+    const { balance, loanBalance } = await this.walletService.getWalletBalance(userId);
+    return { balance, loanBalance };
   }
+  
 
 
 }

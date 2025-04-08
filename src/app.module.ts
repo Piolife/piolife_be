@@ -35,7 +35,7 @@ import { WalletModule } from './wallet/wallet.module';
       },
     }),
     // UserModule,
-    AuthModule,
+    // AuthModule,
     WalletModule,
     // LoanModule,
   ],

@@ -24,73 +24,55 @@ async createWallet(userId: string): Promise<WalletDocument> {
   
 
 
-async deposit(userId: string, amount: number, reference: string, status: string) {
-    const user = await this.userModel.findById(userId);
-    if (!user) {
-      throw new NotFoundException('User not found.');
-    }
+// async deposit(userId: string, amount: number, reference: string, status: string) {
+//     const user = await this.userModel.findById(userId);
+//     if (!user) {
+//       throw new NotFoundException('User not found.');
+//     }
   
-    const wallet = await this.walletModel.findOne({ userId });
-    if (!wallet) {
-      throw new NotFoundException('Wallet not found for user.');
-    }
+//     const wallet = await this.walletModel.findOne({ userId });
+//     if (!wallet) {
+//       throw new NotFoundException('Wallet not found for user.');
+//     }
   
-    // Create new deposit transaction
-    const depositTransaction = {
-      amount,
-      timestamp: new Date(),
-      type: 'deposit',
-      transactionRef: reference,
-      status: status,
-    };
+//     // Create new deposit transaction
+//     const depositTransaction = {
+//       amount,
+//       timestamp: new Date(),
+//       type: 'deposit',
+//       transactionRef: reference,
+//       status: status,
+//     };
   
-    // Update wallet with new transaction
-    const updatedWallet = await this.walletModel.findOneAndUpdate(
-      { userId },
-      {
-        $push: { transactions: depositTransaction },
-        $inc: { balance: amount },
-      },
-      { new: true, useFindAndModify: false }
-    );
+//     // Update wallet with new transaction
+//     const updatedWallet = await this.walletModel.findOneAndUpdate(
+//       { userId },
+//       {
+//         $push: { transactions: depositTransaction },
+//         $inc: { balance: amount },
+//       },
+//       { new: true, useFindAndModify: false }
+//     );
   
-    if (!updatedWallet) {
-      throw new NotFoundException('Failed to update wallet.');
-    }
+//     if (!updatedWallet) {
+//       throw new NotFoundException('Failed to update wallet.');
+//     }
   
-    return {
-      success: true,
-      message: 'Deposit successful',
-      deposit: depositTransaction,
-    };
-  }
+//     return {
+//       success: true,
+//       message: 'Deposit successful',
+//       deposit: depositTransaction,
+//     };
+//   }
   
   
-  async withdraw(userId: string, amount: number, payload: any): Promise<WalletDocument> {
-    const wallet = await this.getWalletByUserId(userId);
-
-    if (wallet.balance < amount) {
-      throw new NotFoundException('Insufficient funds');
-    }
-
-    // Log the withdrawal transaction with payload
-    wallet.transactions.push({ amount: -amount, timestamp: new Date(), type: TransactionType.WITHDRAWAL, payload });
-
-    // Update the wallet balance
-    wallet.balance -= amount;
-
-    // Save the updated wallet
-    return await wallet.save();
-  }
-
-  
-  async getWalletByUserId(userId: string): Promise<WalletDocument> {
-    const wallet = await this.walletModel.findOne({ userId }).exec();
-    if (!wallet) {
-      throw new NotFoundException('Wallet not found for user');
-    }
-    return wallet;
-  }
+  // async getWalletByUserId(userId: string): Promise<WalletDocument> {
+  //   const wallet = await this.walletModel.findOne({ userId }).exec();
+  //   if (!wallet) {
+  //     throw new NotFoundException('Wallet not found for user');
+  //   }
+  //   return wallet;
+  // }
 
 
   async getWalletBalance(userId: string): Promise<number> {
@@ -102,7 +84,6 @@ async deposit(userId: string, amount: number, reference: string, status: string)
     return wallet.balance;
   }
 
-
   async getWallet(userId: string): Promise<WalletDocument> {
     let wallet = await this.walletModel.findOne({ userId });
     if (!wallet) {
@@ -112,30 +93,29 @@ async deposit(userId: string, amount: number, reference: string, status: string)
     return wallet;
   }
 
+  // async reduceLoanEligibility(userId: string, amount: number): Promise<Wallet> {
+  //   const wallet = await this.getWallet(userId);
 
-  async reduceLoanEligibility(userId: string, amount: number): Promise<Wallet> {
-    const wallet = await this.getWallet(userId);
+  //   if (wallet.loanEligibility < amount) {
+  //     throw new Error('You are not eligible for loan at this time');
+  //   }
+  //   wallet.loanEligibility -= amount;
+  //   await wallet.save();
+  //   return wallet;
+  // }
 
-    if (wallet.loanEligibility < amount) {
-      throw new Error('You are not eligible for loan at this time');
-    }
-    wallet.loanEligibility -= amount;
-    await wallet.save();
-    return wallet;
-  }
+  // async addFunds(userId: string, amount: number): Promise<Wallet> {
+  //   const wallet = await this.getWallet(userId);
+  //   wallet.balance += amount;
+  //   await wallet.save();
+  //   return wallet;
+  // }
 
-  async addFunds(userId: string, amount: number): Promise<Wallet> {
-    const wallet = await this.getWallet(userId);
-    wallet.balance += amount;
-    await wallet.save();
-    return wallet;
-  }
-
-  async deductFunds(userId: string, amount: number): Promise<void> {
-    const wallet = await this.walletModel.findOne({ userId });
-    if (!wallet) throw new NotFoundException('Wallet not found.');
-    wallet.balance -= amount;
-    await wallet.save();
-  }
+  // async deductFunds(userId: string, amount: number): Promise<void> {
+  //   const wallet = await this.walletModel.findOne({ userId });
+  //   if (!wallet) throw new NotFoundException('Wallet not found.');
+  //   wallet.balance -= amount;
+  //   await wallet.save();
+  // }
   
 }

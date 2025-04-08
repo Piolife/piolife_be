@@ -73,7 +73,7 @@ export class WalletService {
     // Return both wallet balance and loan balance
     return {
       balance: wallet.balance,
-      loanBalance: wallet.loanBalance || 0, // Default to 0 if loanBalance is not defined
+      loanBalance: wallet.loanBalance || 0, 
     };
   }
   

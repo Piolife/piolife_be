@@ -3,7 +3,7 @@ import { BadRequestException, forwardRef, Inject, Injectable, NotFoundException 
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { TransactionType, Wallet, WalletDocument,} from './schema/wallet.schema';
-// import { User, UserDocument } from 'src/user/Schema/user.schema';
+import { User, UserDocument } from 'src/user/Schema/user.schema';
 // import { UserService } from 'src/user/user.service';
 
 
@@ -11,7 +11,7 @@ import { TransactionType, Wallet, WalletDocument,} from './schema/wallet.schema'
 export class WalletService {
   constructor(@InjectModel(Wallet.name) private readonly walletModel: Model<WalletDocument>,
   // @Inject(forwardRef(() => UserService)) private readonly userService: UserService,
-  // @InjectModel(User.name) private readonly userModel: Model<UserDocument>
+  @InjectModel(User.name) private readonly userModel: Model<UserDocument>
 ) {}
 
 async createWallet(userId: string): Promise<WalletDocument> {
@@ -26,46 +26,46 @@ async createWallet(userId: string): Promise<WalletDocument> {
   
 
 
-// async deposit(userId: string, amount: number, reference: string, status: string) {
-//     // const user = await this.userModel.findById(userId);
-//     // if (!user) {
-//     //   throw new NotFoundException('User not found.');
-//     // }
+async deposit(userId: string, amount: number, reference: string, status: string) {
+    // const user = await this.userModel.findById(userId);
+    // if (!user) {
+    //   throw new NotFoundException('User not found.');
+    // }
   
-//     const wallet = await this.walletModel.findOne({ userId });
-//     if (!wallet) {
-//       throw new NotFoundException('Wallet not found for user.');
-//     }
+    const wallet = await this.walletModel.findOne({ userId });
+    if (!wallet) {
+      throw new NotFoundException('Wallet not found for user.');
+    }
   
-//     // Create new deposit transaction
-//     const depositTransaction = {
-//       amount,
-//       timestamp: new Date(),
-//       type: 'deposit',
-//       transactionRef: reference,
-//       status: status,
-//     };
+    // Create new deposit transaction
+    const depositTransaction = {
+      amount,
+      timestamp: new Date(),
+      type: 'deposit',
+      transactionRef: reference,
+      status: status,
+    };
   
-//     // Update wallet with new transaction
-//     const updatedWallet = await this.walletModel.findOneAndUpdate(
-//       { userId },
-//       {
-//         $push: { transactions: depositTransaction },
-//         $inc: { balance: amount },
-//       },
-//       { new: true, useFindAndModify: false }
-//     );
+    // Update wallet with new transaction
+    const updatedWallet = await this.walletModel.findOneAndUpdate(
+      { userId },
+      {
+        $push: { transactions: depositTransaction },
+        $inc: { balance: amount },
+      },
+      { new: true, useFindAndModify: false }
+    );
   
-//     if (!updatedWallet) {
-//       throw new NotFoundException('Failed to update wallet.');
-//     }
+    if (!updatedWallet) {
+      throw new NotFoundException('Failed to update wallet.');
+    }
   
-//     return {
-//       success: true,
-//       message: 'Deposit successful',
-//       deposit: depositTransaction,
-//     };
-//   }
+    return {
+      success: true,
+      message: 'Deposit successful',
+      deposit: depositTransaction,
+    };
+  }
   
   
   async getWalletByUserId(userId: string): Promise<WalletDocument> {

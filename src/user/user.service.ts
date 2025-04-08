@@ -100,7 +100,7 @@ export class UserService {
           throw new BadRequestException(`${field.replace(/([A-Z])/g, ' $1')} is required.`);
         }
       }
-      
+
   
       if (rules.mustHaveFiles) {
         for (const [key, value] of Object.entries(rules.mustHaveFiles)) {
@@ -126,7 +126,7 @@ export class UserService {
     });
   
     const createdUser = await user.save();
-    // await this.walletService.createWallet(createdUser._id);
+    await this.walletService.createWallet(createdUser._id);
   
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const otpToken = this.jwtService.sign(

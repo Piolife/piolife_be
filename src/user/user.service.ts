@@ -261,35 +261,7 @@ export class UserService {
         }
       }
     }
-  
-    // if (typeof createUserDto.bankDetails === 'string') {
-    //   try {
-    //     createUserDto.bankDetails = JSON.parse(createUserDto.bankDetails);
-    //   } catch (error) {
-    //     throw new BadRequestException('Invalid bank details format');
-    //   }
-    // }
-  
-    // if (!Array.isArray(createUserDto.bankDetails)) {
-    //   throw new BadRequestException('Bank details should be an array');
-    // }
-  
-    // for (const bankDetail of createUserDto.bankDetails) {
-    //   if (
-    //     !bankDetail.bankName ||
-    //     !bankDetail.accountName ||
-    //     !bankDetail.accountNumber
-    //   ) {
-    //     throw new BadRequestException(
-    //       'Each bank detail must have bankName, accountName, and accountNumber'
-    //     );
-    //   }
-  
-    //   if (!/^\d+$/.test(bankDetail.accountNumber)) {
-    //     throw new BadRequestException('Account number must be numeric');
-    //   }
-    // }
-  
+
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const username = await this.generateUniqueUsername(createUserDto.firstName);

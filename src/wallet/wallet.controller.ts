@@ -27,11 +27,11 @@ export class WalletController {
 
 
 
-  @ApiExcludeEndpoint()
-  @Post(':userId/create')
-  async createWallet(@Param('userId') userId: string): Promise<Wallet> {
-    return this.walletService.createWallet(userId);
-  }
+  // @ApiExcludeEndpoint()
+  // @Post(':userId/create')
+  // async createWallet(@Param('userId') userId: string): Promise<Wallet> {
+  //   return this.walletService.createWallet(userId);
+  // }
 
 //   @ApiOperation({ summary: 'Deposit funds into a user wallet' })
 //   @ApiParam({ name: 'userId', required: true, description: 'User ID' })

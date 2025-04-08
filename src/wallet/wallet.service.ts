@@ -14,15 +14,15 @@ export class WalletService {
   // @InjectModel(User.name) private readonly userModel: Model<UserDocument>
 ) {}
 
-async createWallet(userId: string): Promise<WalletDocument> {
-    const existingWallet = await this.walletModel.findOne({ userId });
-    if (existingWallet) {
-      throw new BadRequestException('User already has a wallet.');
-    }
+// async createWallet(userId: string): Promise<WalletDocument> {
+//     const existingWallet = await this.walletModel.findOne({ userId });
+//     if (existingWallet) {
+//       throw new BadRequestException('User already has a wallet.');
+//     }
   
-    const wallet = new this.walletModel({ userId, balance: 0, transactions: [] });
-    return await wallet.save();
-  }
+//     const wallet = new this.walletModel({ userId, balance: 0, transactions: [] });
+//     return await wallet.save();
+//   }
   
 
 

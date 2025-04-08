@@ -2,7 +2,7 @@ import { Controller, Post, Body, Param, BadRequestException, Get, NotFoundExcept
 import { WalletService } from './wallet.service';
 import axios from 'axios';
 import { Wallet } from './schema/wallet.schema';
-import { User, UserDocument } from 'src/user/Schema/user.schema';
+// import { User, UserDocument } from 'src/user/Schema/user.schema';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import * as dotenv from 'dotenv';
@@ -22,7 +22,7 @@ export class WalletController {
   private usedReferences: Set<string> = new Set();
 
   constructor(private readonly walletService: WalletService, 
-      @InjectModel(User.name) private readonly userModel: Model<UserDocument>
+      // @InjectModel(User.name) private readonly userModel: Model<UserDocument>
   ) {}
 
 
@@ -70,10 +70,10 @@ async deposit(
   @Body('reference') reference: string,
 ): Promise<{ success: boolean; message: string; deposit: any }> {  
 
-  const user = await this.userModel.findById(userId);
-  if (!user) {
-    throw new NotFoundException('User not found.');
-  }
+  // const user = await this.userModel.findById(userId);
+  // if (!user) {
+  //   throw new NotFoundException('User not found.');
+  // }
 
   const { isPaymentValid, amount, status } = await this.validatePayment(reference);
   if (!isPaymentValid) {

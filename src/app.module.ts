@@ -16,7 +16,7 @@ import * as cloudinary from 'cloudinary';
 // import { RenderService } from './render-service/render-service';
 // import { PaymentModule } from './payment/payment.module';
 // import { WithdrawalModule } from './withdrawal/withdrawal.module';
-import { UserModule } from './user/user.module';
+// import { UserModule } from './user/user.module';
 import { AuthModule } from './auth/auth.module';
 import { WalletModule } from './wallet/wallet.module';
 
@@ -34,7 +34,7 @@ import { WalletModule } from './wallet/wallet.module';
         };
       },
     }),
-    UserModule,
+    // UserModule,
     AuthModule,
     WalletModule,
     // LoanModule,

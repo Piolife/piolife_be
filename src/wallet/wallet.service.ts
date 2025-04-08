@@ -75,23 +75,23 @@ async createWallet(userId: string): Promise<WalletDocument> {
   // }
 
 
-  async getWalletBalance(userId: string): Promise<number> {
-    const wallet = await this.walletModel.findOne({ userId });
+  // async getWalletBalance(userId: string): Promise<number> {
+  //   const wallet = await this.walletModel.findOne({ userId });
 
-    if (!wallet) {
-      throw new NotFoundException('Wallet not found');
-    }
-    return wallet.balance;
-  }
+  //   if (!wallet) {
+  //     throw new NotFoundException('Wallet not found');
+  //   }
+  //   return wallet.balance;
+  // }
 
-  async getWallet(userId: string): Promise<WalletDocument> {
-    let wallet = await this.walletModel.findOne({ userId });
-    if (!wallet) {
-      wallet = new this.walletModel({ userId, balance: 0, loanEligibility: 20000 });
-      await wallet.save();
-    }
-    return wallet;
-  }
+  // async getWallet(userId: string): Promise<WalletDocument> {
+  //   let wallet = await this.walletModel.findOne({ userId });
+  //   if (!wallet) {
+  //     wallet = new this.walletModel({ userId, balance: 0, loanEligibility: 20000 });
+  //     await wallet.save();
+  //   }
+  //   return wallet;
+  // }
 
   // async reduceLoanEligibility(userId: string, amount: number): Promise<Wallet> {
   //   const wallet = await this.getWallet(userId);

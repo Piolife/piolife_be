@@ -125,25 +125,25 @@ export class WalletController {
 //   }
   
 
-  @ApiOperation({ summary: 'Get user wallet balance' })
-  @ApiParam({ name: 'userId', required: true, description: 'User ID' })
-  @ApiResponse({
-    status: 200,
-    description: 'Returns the user’s wallet balance',
-    schema: {
-      type: 'object',
-      properties: {
-        balance: { type: 'number', example: 5000 },
-      },
-    },
-  })
+  // @ApiOperation({ summary: 'Get user wallet balance' })
+  // @ApiParam({ name: 'userId', required: true, description: 'User ID' })
+  // @ApiResponse({
+  //   status: 200,
+  //   description: 'Returns the user’s wallet balance',
+  //   schema: {
+  //     type: 'object',
+  //     properties: {
+  //       balance: { type: 'number', example: 5000 },
+  //     },
+  //   },
+  // })
 
-  @UseGuards(JwtAuthGuard)
-  @Get(':userId/balance')
-  async getWalletBalance(@Param('userId') userId: string): Promise<{ balance: number }> {
-    const walletBalance = await this.walletService.getWalletBalance(userId);
-    return { balance: walletBalance };
-  }
+  // @UseGuards(JwtAuthGuard)
+  // @Get(':userId/balance')
+  // async getWalletBalance(@Param('userId') userId: string): Promise<{ balance: number }> {
+  //   const walletBalance = await this.walletService.getWalletBalance(userId);
+  //   return { balance: walletBalance };
+  // }
 
 
 }

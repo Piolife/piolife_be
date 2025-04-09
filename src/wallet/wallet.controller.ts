@@ -127,6 +127,19 @@ export class WalletController {
     return computedSignature === signature;
   }
 
+
+  @ApiOperation({ summary: 'Get user wallet balance' })
+  @ApiParam({ name: 'userId', required: true, description: 'User ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns the user’s wallet balance',
+    schema: {
+      type: 'object',
+      properties: {
+        balance: { type: 'number', example: 5000 },
+      },
+    },
+  })
   @Get(':userId/balance')
   async getWalletBalance(@Param('userId') userId: string): Promise<{ balance: number, loanBalance: number }> {
     const { balance, loanBalance } = await this.walletService.getWalletBalance(userId);

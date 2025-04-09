@@ -100,43 +100,76 @@ export class WalletController {
     console.log('Computed signature:', computedSignature); // Log computed signature for debugging
     return computedSignature === signature;
   }
+  // @Post('verify-deposit')
+  // @HttpCode(HttpStatus.OK)
+  // async paystackWebhook(@Req() request: Request, @Headers() headers: any): Promise<void> {
+  //   const signature = headers['x-paystack-signature']; 
+  //   console.log('Received webhook event:', request.body);
+  //   console.log('Received signature:', signature);
+  
+  //   // Check if signature is available
+  //   if (!signature) {
+  //     throw new BadRequestException('Missing Paystack signature');
+  //   }
+  
+  //   // Step 1: Verify webhook signature
+  //   const isValidSignature = this.verifyPaystackSignature(request.body, signature);
+  //   if (!isValidSignature) {
+  //     console.error('Invalid webhook signature');
+  //     throw new BadRequestException('Invalid webhook signature');
+  //   }
+  
+  //   // Step 2: Handle event
+  //   const webhookEvent = typeof request.body === 'string' ? JSON.parse(request.body) : request.body;
+  //   const { event, data } = webhookEvent;
+  //   const reference = data.reference;
+  //   const status = data.status;
+  //   const amount = data.amount / 100; 
+  //   const userId = data.metadata.userId;
+  
+  //   if (event === 'charge.success') {
+  //     // Handle successful payment
+  //     console.log('Payment was successful');
+  //     await this.walletService.deposit(userId, amount, reference, status);
+  //   } else if (event === 'charge.failed') {
+  //     // Handle failed payment
+  //     console.log('Payment failed');
+  //   }
+  // }
+  
   @Post('verify-deposit')
-  @HttpCode(HttpStatus.OK)
-  async paystackWebhook(@Req() request: Request, @Headers() headers: any): Promise<void> {
-    const signature = headers['x-paystack-signature'];  // Access header
-    console.log('Received webhook event:', request.body);
-    console.log('Received signature:', signature);
-  
-    // Check if signature is available
-    if (!signature) {
-      throw new BadRequestException('Missing Paystack signature');
-    }
-  
-    // Step 1: Verify webhook signature
-    const isValidSignature = this.verifyPaystackSignature(request.body, signature);
-    if (!isValidSignature) {
-      console.error('Invalid webhook signature');
-      throw new BadRequestException('Invalid webhook signature');
-    }
-  
-    // Step 2: Handle event
-    const webhookEvent = typeof request.body === 'string' ? JSON.parse(request.body) : request.body;
-    const { event, data } = webhookEvent;
-    const reference = data.reference;
-    const status = data.status;
-    const amount = data.amount / 100; // Convert kobo to Naira
-    const userId = data.metadata.userId;
-  
-    if (event === 'charge.success') {
-      // Handle successful payment
-      console.log('Payment was successful');
-      await this.walletService.deposit(userId, amount, reference, status);
-    } else if (event === 'charge.failed') {
-      // Handle failed payment
-      console.log('Payment failed');
-    }
+@HttpCode(HttpStatus.OK)
+async paystackWebhook(@Req() request: Request, @Headers('x-paystack-signature') signature: string): Promise<void> {
+  const webhookEvent = typeof request.body === 'string' ? JSON.parse(request.body) : request.body;
+  console.log('Received webhook event:', JSON.stringify(webhookEvent, null, 2));
+  console.log('Received signature:', signature);
+
+  const isValidSignature = this.verifyPaystackSignature(webhookEvent, signature);
+  if (!isValidSignature) {
+    console.error('Invalid webhook signature');
+    throw new BadRequestException('Invalid webhook signature');
   }
-  
+
+  const { event, data } = webhookEvent;
+  const reference = data.reference;
+  const status = data.status;
+  const amount = data.amount / 100; 
+  const userId = data.metadata.cart_id;
+
+  console.log(`Processing payment for user: ${userId}, Amount: ${amount}, Reference: ${reference}, Status: ${status}`);
+
+  if (event === 'charge.success') {
+    try {
+      await this.walletService.deposit(userId, amount, reference, status);
+      console.log('Wallet updated successfully');
+    } catch (error) {
+      console.error('Error updating wallet:', error);
+    }
+  } else if (event === 'charge.failed') {
+    console.log('Payment failed');
+  }
+}
+
 
 
 

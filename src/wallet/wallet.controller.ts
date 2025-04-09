@@ -90,7 +90,7 @@ export class WalletController {
     }
   }
 
-  @Post('paystack-webhook')
+  @Post('verify-deposit')
   @HttpCode(HttpStatus.OK)
   async paystackWebhook(@Body() webhookEvent: any, @Headers('x-paystack-signature') signature: string): Promise<void> {
     // Step 1: Verify webhook signature

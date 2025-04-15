@@ -407,7 +407,10 @@ async requestPasswordReset(
   
   
   async findAllMedicalPractitioners(): Promise<User[]> {
-    return this.userModel.find({ role: 'medical_practitioner' }).exec();
+    return this.userModel
+      .find({ role: 'medical_practitioner' })
+      .select('-password') 
+      .exec();
   }
   
 

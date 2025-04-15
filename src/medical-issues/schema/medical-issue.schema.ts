@@ -13,11 +13,11 @@ export class MedicalIssue {
                 required: true,
               })
               _id: string;
-  @Prop({ required: true,unique: true })
+  @Prop({ required: true, unique: true })
   name: string;
 
   @Prop()
-  emoji: string;
+  image: string;
 
   @Prop()
   description: string;

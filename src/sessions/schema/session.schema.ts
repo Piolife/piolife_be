@@ -27,6 +27,15 @@ export class Session {
   @Prop()
   reason: string;
 
+  @Prop()
+  gender: string;
+
+  @Prop()
+  age: string;
+
+  @Prop()
+  name: string;
+
   @Prop({
     type: [{ type: Types.ObjectId, ref: 'MedicalIssue' }],
     required: true,

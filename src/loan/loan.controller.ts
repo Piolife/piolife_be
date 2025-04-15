@@ -56,6 +56,20 @@ export class LoanController {
     };
   }
 
+  @Get('user/:userId')
+  async getUserLoansWithBalance(@Param('userId') userId: string) {
+    const loans = await this.loanService.getUserLoansWithBalance(userId);
+
+    if (!loans.length) {
+      throw new NotFoundException('No loans found for this user.');
+    }
+
+    return {
+      message: 'User loans retrieved successfully.',
+      data: loans,
+    };
+  }
+
   @Post(':userId/repay/:loanId')
   @ApiOperation({ summary: 'Repay a loan' })
   @ApiParam({ name: 'userId', required: true, description: 'User ID' })

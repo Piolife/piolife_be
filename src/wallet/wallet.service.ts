@@ -125,6 +125,13 @@ export class WalletService {
   //   return wallet;
   // }
 
+  async reduceLoanBalance(userId: string, amount: number): Promise<void> {
+    const wallet = await this.getWallet(userId);
+    wallet.loanBalance = Math.max(wallet.loanBalance - amount, 0);
+    await wallet.save();
+  }
+  
+
   async addTransaction(userId: string, transaction: any): Promise<WalletDocument> {
     const wallet = await this.walletModel.findOne({ userId });
     if (!wallet) {
@@ -135,4 +142,12 @@ export class WalletService {
 
     return wallet;
   }
+
+  async updateLoanEligibility(userId: string, newEligibility: number): Promise<void> {
+    await this.walletModel.updateOne(
+      { userId },
+      { $set: { loanEligibility: newEligibility } }
+    );
+  }
+  
 }

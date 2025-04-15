@@ -84,6 +84,7 @@ export class SessionsService {
       throw new NotFoundException('Session not found');
     }
   
+    // Handle completion
     if (status === 'completed' && session.status !== 'completed') {
       const practitionerId = session.medicalPractitioner.toString();
       await this.walletService.addFunds(practitionerId, session.price);
@@ -101,6 +102,19 @@ export class SessionsService {
       });
     }
   
+    // Handle cancellation and refund
+    if (status === 'cancelled' && session.status !== 'cancelled') {
+      const userId = session.user.toString();
+      await this.walletService.addFunds(userId, session.price);
+  
+      await this.walletService.addTransaction(userId, {
+        amount: session.price,
+        timestamp: new Date(),
+        type: 'refund',
+        description: `Refund for cancelled session`,
+      });
+    }
+  
     session.status = status;
     const updatedSession = await session.save();
   
@@ -109,6 +123,7 @@ export class SessionsService {
       session: updatedSession,
     };
   }
+  
   
   
 }

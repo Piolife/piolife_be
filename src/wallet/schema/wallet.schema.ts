@@ -16,6 +16,7 @@ interface Transaction {
   timestamp: Date;
   type: TransactionType;
   payload?: any;
+  reason?: string;
 }
 
 export type WalletDocument = Wallet & Document;

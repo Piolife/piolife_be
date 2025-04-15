@@ -170,10 +170,6 @@ async paystackWebhook(@Req() request: Request, @Headers('x-paystack-signature') 
   }
 }
 
-
-
-
-
   @ApiOperation({ summary: 'Get user wallet balance' })
   @ApiParam({ name: 'userId', required: true, description: 'User ID' })
   @ApiResponse({

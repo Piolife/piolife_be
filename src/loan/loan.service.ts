@@ -45,9 +45,16 @@ export class LoanService {
     // Deduct eligibility and add funds to wallet
     await this.walletService.reduceLoanEligibility(userId, amount);
     await this.walletService.addFunds(userId, amount);
-
+    await this.walletService.addTransaction(userId, {
+      amount,
+      timestamp: new Date(),
+      type: 'loan',
+      description: 'Loan approved',
+    });
     // Update loanBalance in wallet schema
     await this.walletService.updateLoanBalance(userId, loan.amount);
+
+  
 
     return loan;
   }
@@ -96,8 +103,17 @@ export class LoanService {
 
     await repayment.save();
 
+
     // Update loanBalance in wallet schema after repayment
     await this.walletService.updateLoanBalance(userId, remainingBalance);
+
+    await this.walletService.addTransaction(userId, {
+      amount: remainingBalance,
+      timestamp: new Date(),
+      type: 'repayment',
+      description: `Loan repayment of ${amount} made. Remaining balance: ${remainingBalance}`,
+      // description: `Received payment for completed session on: ${issueNames}`,
+    });
 
     return {
       message: remainingBalance === 0 ? 'Loan fully repaid.' : 'Loan repayment successful.',

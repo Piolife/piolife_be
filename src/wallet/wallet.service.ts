@@ -112,10 +112,27 @@ export class WalletService {
     await wallet.save();
   }
 
-  async updateLoanBalance(userId: string, remainingBalance: number): Promise<Wallet> {
+  async updateLoanBalance(userId: string, amount: number): Promise<void> {
     const wallet = await this.getWallet(userId);
-    wallet.loanBalance = remainingBalance;
+    wallet.loanBalance += amount;
+    await wallet.save(); 
+  }
+
+  // async updateLoanBalance(userId: string, remainingBalance: number): Promise<Wallet> {
+  //   const wallet = await this.getWallet(userId);
+  //   wallet.loanBalance = remainingBalance;
+  //   await wallet.save();
+  //   return wallet;
+  // }
+
+  async addTransaction(userId: string, transaction: any): Promise<WalletDocument> {
+    const wallet = await this.walletModel.findOne({ userId });
+    if (!wallet) {
+      throw new NotFoundException('Wallet not found for user');
+    }
+    wallet.transactions.push(transaction);
     await wallet.save();
+
     return wallet;
   }
 }

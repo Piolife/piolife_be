@@ -24,6 +24,11 @@ export class UserController {
 
   ) {}
 
+  @Get('practitioners')
+  getPractitioners() {
+    return this.userService.findAllMedicalPractitioners();
+  }
+
   @Post('create')
 @ApiOperation({ summary: 'Create a new user' })
 @ApiResponse({ status: 201, description: 'User created successfully' })
@@ -307,4 +312,7 @@ async requestReset(@Body() body: { email: string; role: 'client' | 'medical_prac
   async getUser(@Param('id') id: string): Promise<User> {
     return this.userService.getUserById(id);
   }
+
+
+
 }

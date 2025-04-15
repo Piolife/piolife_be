@@ -21,6 +21,8 @@ import { AuthModule } from './auth/auth.module';
 import { WalletModule } from './wallet/wallet.module';
 import { UserModule } from './user/user.module';
 import { LoanModule } from './loan/loan.module';
+import { MedicalIssuesModule } from './medical-issues/medical-issues.module';
+import { SessionsModule } from './sessions/sessions.module';
 
 @Module({
   imports: [
@@ -40,6 +42,8 @@ import { LoanModule } from './loan/loan.module';
     AuthModule,
     WalletModule,
     LoanModule,
+    MedicalIssuesModule,
+    SessionsModule,
   ],
   controllers: [],
   providers: [

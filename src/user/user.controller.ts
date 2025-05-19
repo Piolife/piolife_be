@@ -193,7 +193,7 @@ export class UserController {
       const otp = Math.floor(100000 + Math.random() * 900000).toString();
       const otpToken = this.jwtService.sign(
         { userId: user._id, otp },
-        { secret: this.configService.get<string>('JWT_SECRET'), expiresIn: '30m' },
+        { secret: "3tx54kqrmtyuufbdrv66en3htwr6xh5gfwsh65jkuvat7dyrsqrbn945wq4gkqf6", expiresIn: '30m' },
       );
     
       await this.emailService.sendConfirmationEmail(user.email, user.firstName, otp, otpToken);
@@ -210,7 +210,7 @@ export class UserController {
     
     const token = this.jwtService.sign(
       { email: user.email, role: user.role, user_id: user._id },
-      { secret: this.configService.get<string>('JWT_SECRET'), expiresIn: '24h' },
+      { secret: "3tx54kqrmtyuufbdrv66en3htwr6xh5gfwsh65jkuvat7dyrsqrbn945wq4gkqf6", expiresIn: '24h' },
     );
 
     return {

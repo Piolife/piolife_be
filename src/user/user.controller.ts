@@ -209,7 +209,7 @@ export class UserController {
     }
     
     const token = this.jwtService.sign(
-      { email: user.email, role: user.role },
+      { email: user.email, role: user.role, user_id: user._id },
       { secret: this.configService.get<string>('JWT_SECRET'), expiresIn: '24h' },
     );
 

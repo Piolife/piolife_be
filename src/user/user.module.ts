@@ -19,7 +19,7 @@ import { WalletModule } from 'src/wallet/wallet.module';
     WalletModule,
     EmailModule,
     JwtModule.register({
-      secret: process.env.JWT_SECRET || 'your_secret_key',
+      secret: "uzd3477hg4w2tmd7qp9zcc5yex9wvg66pambdazuqf9fb5b32szfgrqra7429vst" || 'your_secret_key',
       signOptions: { expiresIn: '1h' },
     }),
   ],

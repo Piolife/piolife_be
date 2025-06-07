@@ -28,6 +28,10 @@ export class UserService {
 
   ) {}
 
+
+ 
+  
+
   async createUser(
     createUserDto: CreateUserDto
   ): Promise<{ message: string; token: string; otp: string }> {
@@ -39,9 +43,10 @@ export class UserService {
       profilePicture,
       degreeCertificate,
       currentPracticeLicense,
+      referralCode,
     } = createUserDto;
   
-    // Normalize email and phone
+    // Normalize
     email = email.toLowerCase().trim();
     phoneNumber = phoneNumber.trim();
   
@@ -49,18 +54,13 @@ export class UserService {
       throw new BadRequestException('Profile Image is required.');
     }
   
-    // Check if email+role combo already exists
-    const existingUser = await this.userModel.findOne({
-      role,
-      email,
-    }).exec();
-  
+    // Check if user already exists
+    const existingUser = await this.userModel.findOne({ role, email }).exec();
     if (existingUser) {
       throw new ConflictException('User with this email already exists for the selected role.');
     }
   
-
-    // Role-based field validation
+    // Role-based validation
     const validationRules = {
       [UserRole.CLIENT]: {
         prohibitedFields: ['bankDetails', 'degreeCertificate', 'currentPracticeLicense', 'specialty', 'ward', 'localGovernmentArea', 'hospitalName', 'officerInCharge', 'languageProficiency'],
@@ -78,7 +78,6 @@ export class UserService {
     };
   
     const rules = validationRules[role];
-  
     if (rules) {
       for (const field of rules.prohibitedFields || []) {
         if (createUserDto[field]) {
@@ -103,13 +102,15 @@ export class UserService {
   
     const hashedPassword = await bcrypt.hash(password, 10);
   
+    // Generate unique username (this will now be used as referral code)
     const username = await this.generateUniqueUsername(createUserDto.firstName);
   
+    // Create user
     const user = new this.userModel({
       _id: snowflakeIdGenerator.generate(),
       ...createUserDto,
       username,
-      email, 
+      email,
       phoneNumber,
       password: hashedPassword,
       profilePicture,
@@ -120,9 +121,19 @@ export class UserService {
   
     const createdUser = await user.save();
   
-   
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    // Handle referral
+    if (referralCode) {
+      const referrer = await this.userModel.findOne({ username: referralCode });
   
+      if (referrer) {
+        await this.walletService.credit(referrer._id, 1000, 'Referral bonus');
+        referrer.referralCount = (referrer.referralCount || 0) + 1;
+        await referrer.save();
+      }
+    }
+  
+    // OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const otpToken = this.jwtService.sign(
       { userId: createdUser._id, otp },
       {
@@ -143,6 +154,8 @@ export class UserService {
       otp,
     };
   }
+  
+  
   
   
   private async generateUniqueUsername(firstName: string): Promise<string> {

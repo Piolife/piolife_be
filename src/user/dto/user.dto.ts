@@ -91,7 +91,6 @@ export class CreateUserDto {
   @IsOptional()
   profileImage: string;
 
-  /** 🔥 Admin-only fields */
   @IsString()
   @IsOptional()
   degreeCertificate?: string;
@@ -138,6 +137,14 @@ export class CreateUserDto {
   @IsString()
   @IsOptional()
   officerInCharge: string;
+  @IsString()
+@IsOptional()
+referralCode?: string;
+
+@IsString()
+@IsOptional()
+myReferralCode?: string;
+
 }
 
 

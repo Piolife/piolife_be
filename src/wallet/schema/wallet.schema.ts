@@ -9,11 +9,12 @@ export enum TransactionType {
   WITHDRAWAL = 'withdrawal',
   BANK_TRANSFER  ='bank_transfer',
   opay_transfer = 'opay_transfer',
+  REFERRAL_BONUS = 'referral_bonus',
 }
 
 interface Transaction {
   amount: number;
-  timestamp: Date;
+  timestamp?: Date;
   type: TransactionType;
   payload?: any;
   reason?: string;

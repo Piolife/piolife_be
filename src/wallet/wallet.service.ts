@@ -1,7 +1,7 @@
 import { BadRequestException, NotFoundException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { Wallet, WalletDocument } from './schema/wallet.schema';
+import { TransactionType, Wallet, WalletDocument } from './schema/wallet.schema';
 import { User, UserDocument } from 'src/user/Schema/user.schema';
 
 @Injectable()
@@ -149,5 +149,18 @@ export class WalletService {
       { $set: { loanEligibility: newEligibility } }
     );
   }
+
+  async credit(userId: string, amount: number, description: string) {
+    const wallet = await this.walletModel.findOne({ userId });
+  
+    if (!wallet) {
+      throw new NotFoundException('Wallet not found');
+    }
+  
+    wallet.balance += amount;
+    wallet.transactions.push({ amount, type: TransactionType.REFERRAL_BONUS, timestamp: new Date() });
+    await wallet.save();
+  }
+  
   
 }

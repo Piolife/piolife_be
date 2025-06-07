@@ -121,6 +121,14 @@ policyAgreement: boolean;
 @Prop()
 ward: string;
 
+@Prop({ unique: true }) 
+myReferralCode: string;
+
+@Prop()
+referralCode?: string;
+@Prop({ default: 0 })
+referralCount: number;
+
 
 }
 export const UserSchema = SchemaFactory.createForClass(User);

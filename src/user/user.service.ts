@@ -248,7 +248,12 @@ export class UserService {
     }
   }
 
-
+  async setUserOnlineStatus(userId: string, isOnline: boolean) {
+    await this.userModel.findByIdAndUpdate(userId, {
+      isOnline,
+      lastSeen: new Date(),
+    });
+  }
 //  async requestPasswordReset(
 //     email: string,
 //   ): Promise<{ message: string; otp: string; token: string }> {

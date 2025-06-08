@@ -8,6 +8,7 @@ import { CloudinaryModule } from 'src/services/cloudinary/cloudinary.module';
 import { EmailModule } from 'src/services/email/email.module';
 import { WalletSchema } from 'src/wallet/schema/wallet.schema';
 import { WalletModule } from 'src/wallet/wallet.module';
+import { PresenceGateway } from './presence.gateway';
 
 
 @Module({
@@ -24,7 +25,7 @@ import { WalletModule } from 'src/wallet/wallet.module';
     }),
   ],
   controllers: [UserController],
-  providers: [UserService],
+  providers: [PresenceGateway,UserService],
   exports: [UserService],
 })
 export class UserModule {}

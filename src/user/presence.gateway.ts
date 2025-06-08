@@ -5,11 +5,11 @@ import {
     WebSocketServer,
   } from '@nestjs/websockets';
   import { Server, Socket } from 'socket.io';
-  import { UserService } from './user.service'; // Adjust path
+  import { UserService } from './user.service';
   
   @WebSocketGateway({
     cors: {
-      origin: '*', // Set correct origin in production
+      origin: '*', 
     },
   })
   export class PresenceGateway implements OnGatewayConnection, OnGatewayDisconnect {

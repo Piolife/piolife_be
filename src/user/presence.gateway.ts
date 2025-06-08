@@ -5,11 +5,11 @@ import {
     WebSocketServer,
   } from '@nestjs/websockets';
   import { Server, Socket } from 'socket.io';
-  import { UserService } from './user.service'; 
+  import { UserService } from './user.service'; // Adjust path
   
   @WebSocketGateway({
     cors: {
-      origin: '*', 
+      origin: '*', // Set correct origin in production
     },
   })
   export class PresenceGateway implements OnGatewayConnection, OnGatewayDisconnect {
@@ -22,8 +22,11 @@ import {
       const userId = client.handshake.query.userId as string;
   
       if (userId) {
+        console.log(`🟢 User connected: ${userId}`);
         await this.userService.setUserOnlineStatus(userId, true);
         this.server.emit('userStatusChanged', { userId, isOnline: true });
+      } else {
+        console.warn('⚠️ WebSocket connection without userId');
       }
     }
   
@@ -31,6 +34,7 @@ import {
       const userId = client.handshake.query.userId as string;
   
       if (userId) {
+        console.log(`🔴 User disconnected: ${userId}`);
         await this.userService.setUserOnlineStatus(userId, false);
         this.server.emit('userStatusChanged', { userId, isOnline: false });
       }

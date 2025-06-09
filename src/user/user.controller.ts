@@ -11,6 +11,7 @@ import { plainToInstance } from 'class-transformer';
 import { User } from './Schema/user.schema';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { EmailService } from 'src/services/email/email.sevice';
+import { PresenceGateway } from './presence.gateway';
 
 @ApiTags(' User Auth')
 @Controller('users')
@@ -20,14 +21,28 @@ export class UserController {
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
   private emailService: EmailService,
+  private readonly presenceGateway: PresenceGateway,
 
 
   ) {}
 
   
-  @Get('practitioners')
-  getPractitioners() {
-    return this.userService.findAllMedicalPractitioners();
+  // @Get('practitioners')
+  // getPractitioners() {
+  //   return this.userService.findAllMedicalPractitioners();
+  // }
+
+  @Get('medical-practitioners')
+  async getMedicalPractitioners(
+    @Query('languages') languages?: string | string[],
+  ): Promise<User[]> {
+    const languageList = Array.isArray(languages)
+      ? languages
+      : languages
+      ? [languages]
+      : [];
+
+    return this.userService.findAllMedicalPractitioners(languageList);
   }
 
   @Post('create')
@@ -208,6 +223,13 @@ export class UserController {
       );
       
     }
+
+      // ✅ Set user online and notify others
+      await this.userService.setUserOnlineStatus(user._id, true);
+      this.presenceGateway.server.emit('userStatusChanged', {
+        userId: user._id,
+        isOnline: true,
+      });
     
     const token = this.jwtService.sign(
       { email: user.email, role: user.role },
@@ -252,10 +274,18 @@ export class UserController {
         referralCode: user.referralCode,
         myReferralCode: user.myReferralCode,
         referralCount: user.referralCount,
+        isOnline: true,
+
       },
     };
     
   }
+
+
+  @Post('logout')
+async logout(@Body() body: { userId: string }) {
+  return this.userService.logout(body.userId);
+}
 
   // @Post('forgot-password')
   // @ApiOperation({ summary: 'Request a password reset' })

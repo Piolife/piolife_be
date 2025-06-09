@@ -103,7 +103,7 @@ bankDetails?: BankDetails[];
 @Prop()
 languageProficiency?: Array<string>;
 @Prop()
-specialty: string;
+specialty?: Array<string>;
 
 @Prop()
 hospitalName: string;

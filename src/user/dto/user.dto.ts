@@ -101,7 +101,7 @@ export class CreateUserDto {
 
   @IsString()
   @IsOptional()
-  specialty?: string;
+  specialty?: Array<string>;
 
   @IsString()
   @IsOptional()

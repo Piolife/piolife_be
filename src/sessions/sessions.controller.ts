@@ -1,27 +1,40 @@
-import { Controller, Post, Get, Body, Patch, Param } from '@nestjs/common';
+import { Controller, Post, Get, Body, Param, BadRequestException } from '@nestjs/common';
 import { SessionsService } from './sessions.service';
-import { CreateSessionDto, UpdateSessionStatusDto } from './dto/create-session.dto';
+import { BookSessionDto, CreateReviewDto, } from './dto/create-session.dto';
+import { AuthGuard } from '@nestjs/passport';
 
 @Controller('sessions')
 export class SessionsController {
   constructor(private readonly service: SessionsService) {}
-
-  @Post()
-  create(@Body() dto: CreateSessionDto) {
-    return this.service.create(dto);
+  @Get('pending/:practitionerId')
+  async getPendingSessions(
+    @Param('practitionerId') practitionerId: string
+  ) {
+    return this.service.getPendingSessionsForPractitioner(practitionerId);
   }
 
-  @Patch(':id/status')
-updateStatus(
-  @Param('id') sessionId: string,
-  @Body() dto: UpdateSessionStatusDto,
+  @Post('practitioners')
+  async getMatchingPractitioners(@Body() dto: BookSessionDto) {
+    return this.service.findMatchingPractitioners(dto);
+  }
+  @Post('book-session')
+async bookSession(@Body() dto: BookSessionDto) {
+  return this.service.bookSessionWithAnyPractitioner(dto);
+}
+
+@Post('review')
+async submitReview(
+  @Body() dto: CreateReviewDto
 ) {
-  return this.service.updateSessionStatus(sessionId, dto.status);
+  const { practitionerId } = dto;
+
+  if (!practitionerId) {
+    throw new BadRequestException('practitionerId is required');
+  }
+
+  return this.service.submitReview(dto, practitionerId);
 }
 
 
-//   @Get()
-//   findAll() {
-//     return this.service.findAll();
-//   }
+
 }

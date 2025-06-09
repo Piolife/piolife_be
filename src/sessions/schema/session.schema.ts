@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document, Types } from 'mongoose';
+import { Document } from 'mongoose';
 import { SnowflakeIdGenerator } from 'utils/idGenerator';
 
 const snowflakeIdGenerator = new SnowflakeIdGenerator();
@@ -15,39 +15,39 @@ export class Session {
   })
   _id: string;
 
-  @Prop({ type: Types.ObjectId, ref: 'User', required: true })
-  user: Types.ObjectId;
-
-  @Prop({ type: Types.ObjectId, ref: 'User', required: true })
-  medicalPractitioner: Types.ObjectId;
+  @Prop({ required: true })
+  userId: string;
 
   @Prop({ required: true })
-  date: Date;
+  practitionerId: string;
+
+  @Prop({ type: [String], default: [] })
+  languageProficiency: string[];
+
+  @Prop({ type: [String], default: [] })
+  specialty: string[];
 
   @Prop()
-  reason: string;
-
-  @Prop()
-  gender: string;
+  name: string;
 
   @Prop()
   age: string;
 
   @Prop()
-  name: string;
-
-  @Prop({
-    type: [{ type: Types.ObjectId, ref: 'MedicalIssue' }],
-    required: true,
-    default: [],
-  })
-  medicalIssue: Types.ObjectId[];
-
-  @Prop({ required: true })
-  price: number;
+  gender: string;
 
   @Prop({ default: 'pending', enum: ['pending', 'in-progress', 'completed', 'cancelled'] })
   status: string;
+
+  @Prop()
+review?: string;
+
+@Prop()
+rating?: number;
+
+@Prop({ default: false })
+reviewSubmitted: boolean;
+
 }
 
 export const SessionSchema = SchemaFactory.createForClass(Session);

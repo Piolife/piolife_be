@@ -174,9 +174,6 @@ export class UserService {
   
 
 
-
-  
-
   async verifyEmail(token?: string, otp?: string): Promise<any> {
     if (!token) {
       throw new BadRequestException('Token is required');
@@ -225,7 +222,6 @@ export class UserService {
   }
 
 
-
   async findUserByEmail(email: string): Promise<User> {
     const user = await this.userModel
       .findOne({ email: { $regex: new RegExp(`^${email}$`, 'i') } })
@@ -247,6 +243,20 @@ export class UserService {
       return userExists;
     }
   }
+
+  async logout(userId: string): Promise<{ message: string }> {
+    const user = await this.userModel.findById(userId);
+  
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+  
+    user.isOnline = false;
+    await user.save();
+  
+    return { message: 'Logout successful, user marked as offline' };
+  }
+  
 
   async setUserOnlineStatus(userId: string, isOnline: boolean) {
     await this.userModel.findByIdAndUpdate(userId, {
@@ -424,12 +434,22 @@ async requestPasswordReset(
   }
   
   
-  async findAllMedicalPractitioners(): Promise<User[]> {
-    return this.userModel
-      .find({ role: 'medical_practitioner' })
-      .select('-password') 
-      .exec();
-  }
+  // async findAllMedicalPractitioners(): Promise<User[]> {
+  //   return this.userModel
+  //     .find({ role: 'medical_practitioner' })
+  //     .select('-password') 
+  //     .exec();
+  // }
   
+async findAllMedicalPractitioners(languages?: string[]): Promise<User[]> {
+  const query: any = { role: 'medical_practitioner' };
+
+  if (languages?.length) {
+    query.languageProficiency = { $in: languages };
+  }
+
+  return this.userModel.find(query).select('-password').exec();
+}
+
 
 }

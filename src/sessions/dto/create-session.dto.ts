@@ -1,58 +1,73 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsDateString, IsIn, IsNumber, IsOptional, IsString } from 'class-validator';
+import { Transform } from 'class-transformer';
+import { IsArray, IsDateString, IsIn, IsNotEmpty, IsNumber, IsOptional, IsString, Max, Min } from 'class-validator';
 
-export class CreateSessionDto {
-  @ApiProperty({ description: 'ID of the user booking the session' })
-  @IsString()
-  user: string;
 
-  @ApiProperty({ description: 'ID of the medical practitioner' })
-  @IsString()
-  medicalPractitioner: string;
 
-  @ApiProperty({ description: 'Date of the session', example: '2025-04-15T10:00:00Z' })
-  @IsDateString()
-  date: string;
-
-  @ApiPropertyOptional({ description: 'Reason for booking the session' })
+export class BookSessionDto {
+  @ApiPropertyOptional({ type: [String], description: 'List of specialty IDs' })
+  @IsArray()
   @IsOptional()
-  @IsString()
-  reason?: string;
+  @Transform(({ value }) => Array.isArray(value) ? value : [value])
+  @IsString({ each: true })
+  specialty?: string[];
 
-  @ApiPropertyOptional({ description: 'Medical issue(s)', type: [String] })
+  @ApiPropertyOptional({ type: [String], description: 'Languages the user is proficient in' })
+  @IsArray()
   @IsOptional()
-  medicalIssue: string | string[];
-
-  @ApiPropertyOptional({ description: 'Session price', example: 5000 })
-  @IsOptional()
-  @IsNumber()
-  price: number;
+  @Transform(({ value }) => Array.isArray(value) ? value : [value])
+  @IsString({ each: true })
+  languageProficiency?: string[];
 
   @ApiPropertyOptional({ description: 'Patient name' })
-  @IsOptional()
   @IsString()
-  name: string;
+  @IsOptional()
+  name?: string;
+
+  @ApiPropertyOptional({ description: 'Patient gender' })
+  @IsString()
+  @IsOptional()
+  gender?: string;
 
   @ApiPropertyOptional({ description: 'Patient age' })
   @IsOptional()
   @IsString()
-  age: string;
+  age?: string;
 
-  @ApiPropertyOptional({ description: 'Patient gender', example: 'male' })
+  @ApiProperty({ description: 'ID of the user booking the session' })
+  @IsString()
+  userId: string;
+
+  @ApiPropertyOptional({ description: 'ID of the preferred practitioner (optional)' })
+  @IsString()
   @IsOptional()
-  @IsString()
-  gender: string;
+  practitionerId?: string;
 }
 
 
-export class UpdateSessionStatusDto {
-  @ApiProperty({
-    description: 'Status of the session',
-    enum: ['pending', 'in-progress', 'completed', 'cancelled'],
-  })
+export class CreateReviewDto {
+  @ApiProperty({ description: 'ID of the session being reviewed' })
   @IsString()
-  @IsIn(['pending', 'in-progress', 'completed', 'cancelled'])
-  status: string;
+  @IsNotEmpty()
+  sessionId: string;
+
+  @ApiProperty({ description: 'ID of the medical practitioner being reviewed' })
+  @IsString()
+  @IsNotEmpty()
+  practitionerId: string;
+
+  @ApiPropertyOptional({ description: 'Rating from 1 to 5' })
+  @IsNumber()
+  @IsOptional()
+  @Min(1)
+  @Max(5)
+  rating?: number;
+
+  @ApiProperty({ description: 'Written review of the session' })
+  @IsString()
+  @IsNotEmpty()
+  review: string;
 }
 
-  
+
+

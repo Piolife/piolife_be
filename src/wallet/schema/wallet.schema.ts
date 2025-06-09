@@ -10,6 +10,13 @@ export enum TransactionType {
   BANK_TRANSFER  ='bank_transfer',
   opay_transfer = 'opay_transfer',
   REFERRAL_BONUS = 'referral_bonus',
+  CONSULTATION_FEE = 'consultation_fee',
+  CONSULTATION_REFUND = 'consultation_refund',
+  CONSULTATION_PAYMENT = 'consultation_payment',
+  LOAN_DISBURSEMENT = 'loan_disbursement',
+  LOAN_REPAYMENT = 'loan_repayment',
+
+
 }
 
 interface Transaction {

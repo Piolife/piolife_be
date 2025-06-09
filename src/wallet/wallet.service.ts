@@ -1,4 +1,4 @@
-import { BadRequestException, NotFoundException, Injectable } from '@nestjs/common';
+import { BadRequestException, NotFoundException, Injectable, ForbiddenException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { TransactionType, Wallet, WalletDocument } from './schema/wallet.schema';
@@ -161,6 +161,29 @@ export class WalletService {
     wallet.transactions.push({ amount, type: TransactionType.REFERRAL_BONUS, timestamp: new Date() });
     await wallet.save();
   }
+  
+
+  async transferFunds(userId: string, practitionerId: string, amount: number) {
+    const userWallet = await this.walletModel.findOne({ userId });
+    const practitionerWallet = await this.walletModel.findOne({ userId: practitionerId });
+  
+    if (!userWallet || userWallet.balance < amount) {
+      throw new ForbiddenException("Insufficient balance in user's wallet");
+    }
+  
+    if (!practitionerWallet) {
+      throw new NotFoundException("Practitioner's wallet not found");
+    }
+  
+    userWallet.balance -= amount;
+    practitionerWallet.balance += amount;
+
+    userWallet.transactions.push({ amount, type: TransactionType.CONSULTATION_PAYMENT, timestamp: new Date() });
+    practitionerWallet.transactions.push({ amount, type: TransactionType.CONSULTATION_FEE, timestamp: new Date() });
+    await userWallet.save();
+    await practitionerWallet.save();
+  }
+  
   
   
 }

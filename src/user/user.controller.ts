@@ -286,23 +286,6 @@ export class UserController {
 async logout(@Body() body: { userId: string }) {
   return this.userService.logout(body.userId);
 }
-
-  // @Post('forgot-password')
-  // @ApiOperation({ summary: 'Request a password reset' })
-  // @ApiResponse({ status: 200, description: 'Password reset OTP sent successfully' })
-  // @ApiBody({
-  //   schema: {
-  //     type: 'object',
-  //     properties: {
-  //       email: { type: 'string', example: 'admin@example.com' },
-  //     },
-  //   },
-  // })
-  // async requestPasswordReset(@Body('email') email: string) {
-  //   return this.userService.requestPasswordReset(email);
-  // }
-
-
   @Post('request-password-reset')
   @ApiOperation({ summary: 'Request a password reset' })
   @ApiResponse({ status: 200, description: 'Password reset OTP sent successfully' })
@@ -358,7 +341,7 @@ async requestReset(@Body() body: { email: string; role: 'client' | 'medical_prac
     return this.userService.resetPassword(resetToken, password, confirmPassword);
   }
 
-  @UseGuards(JwtAuthGuard)
+  // @UseGuards(JwtAuthGuard)
   @Get(':id')
   @ApiBearerAuth() 
   @ApiOperation({ summary: 'Get a user by ID' }) 

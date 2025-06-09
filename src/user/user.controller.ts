@@ -343,7 +343,7 @@ async requestReset(@Body() body: { email: string; role: 'client' | 'medical_prac
 
   // @UseGuards(JwtAuthGuard)
   @Get(':id')
-  @ApiBearerAuth() 
+  // @ApiBearerAuth() 
   @ApiOperation({ summary: 'Get a user by ID' }) 
   @ApiParam({ name: 'id', required: true, description: 'User ID' }) 
   @ApiResponse({ status: 200, description: 'User retrieved successfully', type: User }) 

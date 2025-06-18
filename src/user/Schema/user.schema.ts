@@ -111,6 +111,10 @@ hospitalName: string;
 officerInCharge: string;
 @Prop()
 alternatePhoneNumber: string;
+@Prop()
+pharmacyName: string;
+@Prop()
+medicalLabName: string;
 
 @Prop()
 localGovernmentArea: string;

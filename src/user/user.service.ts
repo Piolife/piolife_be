@@ -75,6 +75,16 @@ export class UserService {
         prohibitedFields: ['firstName', 'lastName', 'email', 'password', 'specialty', 'languageProficiency', 'gender', 'maritalStatus', 'dateOfBirth'],
         requiredFields: ['hospitalName', 'officerInCharge', 'bankDetails', 'ward', 'localGovernmentArea', 'stateOfResidence'],
       },
+      [UserRole.PHAMACY_SERVICES]: {
+        prohibitedFields: [],
+        requiredFields: ['pharmacyName', 'stateOfResidence', 'phoneNumber', 'localGovernmentArea', 'ward', 'alternativePhoneNumber'],
+      },
+      
+      [UserRole.MEDICAL_LAB_SERVICES]: {
+        prohibitedFields: [],
+        requiredFields: ['medicalLabName', 'stateOfResidence', 'phoneNumber', 'localGovernmentArea', 'ward', 'alternativePhoneNumber'],
+      },
+      
     };
   
     const rules = validationRules[role];
@@ -99,11 +109,22 @@ export class UserService {
         }
       }
     }
-  
+
+    
+
     const hashedPassword = await bcrypt.hash(password, 10);
   
     // Generate unique username (this will now be used as referral code)
-    const username = await this.generateUniqueUsername(createUserDto.firstName);
+    let username: string;
+
+    if (role === UserRole.PHAMACY_SERVICES || role === UserRole.MEDICAL_LAB_SERVICES) {
+      const facilityId = this.generateFacilityId(createUserDto, role);
+      username = facilityId;
+    } else {
+      username = await this.generateUniqueUsername(createUserDto.firstName);
+    }
+    
+    
   
     // Create user
     const user = new this.userModel({
@@ -156,6 +177,28 @@ export class UserService {
   }
   
   
+  private generateFacilityId(createUserDto: CreateUserDto, role: UserRole): string {
+    const {
+      stateOfResidence,
+      phoneNumber,
+      localGovernmentArea,
+      alternativePhoneNumber,
+      ward,
+      pharmacyName,
+      medicalLabName,
+    } = createUserDto;
+  
+    const stateCode = stateOfResidence?.slice(0, 2).toUpperCase() || '';
+    const phoneSuffix = phoneNumber?.slice(-4) || '';
+    const altPhoneSuffix = alternativePhoneNumber?.slice(-4) || '';
+    const lga = localGovernmentArea?.replace(/\s+/g, '')?.toLowerCase() || '';
+    const wardName = ward?.replace(/\s+/g, '')?.toLowerCase() || '';
+    const name = role === UserRole.PHAMACY_SERVICES
+      ? pharmacyName?.replace(/\s+/g, '')?.toLowerCase() || ''
+      : medicalLabName?.replace(/\s+/g, '')?.toLowerCase() || '';
+  
+    return `${stateCode}${phoneSuffix}${lga}${altPhoneSuffix}${wardName}${name}`;
+  }
   
   
   private async generateUniqueUsername(firstName: string): Promise<string> {

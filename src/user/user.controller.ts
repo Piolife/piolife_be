@@ -1,7 +1,7 @@
 import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiQuery, ApiConsumes, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
 import { Body, Controller, Get, Post, Query, BadRequestException, UnauthorizedException, UsePipes, ValidationPipe, UploadedFile, UseInterceptors, UploadedFiles, Param, UseGuards, HttpCode, HttpStatus, ForbiddenException, HttpException } from '@nestjs/common';
 import { UserService } from './user.service';
-import { CreateUserDto, LoginDto } from './dto/user.dto';
+import { CreateUserDto, LoginDto, LogoutDto } from './dto/user.dto';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcryptjs';
@@ -114,33 +114,6 @@ export class UserController {
     { name: 'currentPracticeLicense', maxCount: 1 },
   ]),
 )
-
-// @Post('create')
-// async createUser(
-//   @Body() createUserDto: CreateUserDto,
-//   @UploadedFiles() files: { 
-//     profileImage?: Express.Multer.File[]; 
-//     degreeCertificate?: Express.Multer.File[]; 
-//     currentPracticeLicense?: Express.Multer.File[];
-//   }
-// ): Promise<{ message: string; token: string; otp: string }> {
-
-//   const validatedDto = plainToInstance(CreateUserDto, createUserDto);    
-//   const errors = validateSync(validatedDto, { whitelist: true, forbidNonWhitelisted: true });
-
-//   if (errors.length > 0) {
-//     const formattedErrors = errors.map(error => ({
-//       property: error.property,
-//       constraints: error.constraints,
-//     }));
-
-//     throw new BadRequestException({
-//       message: 'Invalid input fields',
-//       errors: formattedErrors,
-//     });
-//   }
-//   return await this.userService.createUser(files, createUserDto);
-// }
 
 
 @Post('create')
@@ -275,6 +248,9 @@ export class UserController {
         myReferralCode: user.myReferralCode,
         referralCount: user.referralCount,
         isOnline: true,
+        phamacyName: user.pharmacyName,
+        medicalLabName: user.medicalLabName,
+        
 
       },
     };
@@ -282,10 +258,16 @@ export class UserController {
   }
 
 
+ 
+  
+  @ApiOperation({ summary: 'Logout user' })
+  @ApiBody({ type: LogoutDto })
+  @ApiResponse({ status: 200, description: 'User logged out successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid user ID' })
   @Post('logout')
-async logout(@Body() body: { userId: string }) {
-  return this.userService.logout(body.userId);
-}
+  async logout(@Body() body: LogoutDto) {
+    return this.userService.logout(body.userId);
+  }
   @Post('request-password-reset')
   @ApiOperation({ summary: 'Request a password reset' })
   @ApiResponse({ status: 200, description: 'Password reset OTP sent successfully' })

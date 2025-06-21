@@ -230,7 +230,6 @@ export class UserController {
         countryOfResidence: user.countryOfResidence,
         stateOfResidence: user.stateOfResidence,
         profilePicture: user.profilePicture,
-        profileImage: user.profileImage,
         role: user.role,
         status: user.status,
         bankDetails: user.bankDetails,

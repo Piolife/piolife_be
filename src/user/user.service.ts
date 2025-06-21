@@ -77,12 +77,12 @@ export class UserService {
       },
       [UserRole.PHAMACY_SERVICES]: {
         prohibitedFields: [],
-        requiredFields: ['pharmacyName', 'stateOfResidence', 'phoneNumber', 'localGovernmentArea', 'ward', 'alternativePhoneNumber'],
+        requiredFields: ['pharmacyName', 'logo', 'stateOfResidence', 'phoneNumber', 'localGovernmentArea', 'ward', 'alternativePhoneNumber'],
       },
       
       [UserRole.MEDICAL_LAB_SERVICES]: {
         prohibitedFields: [],
-        requiredFields: ['medicalLabName', 'stateOfResidence', 'phoneNumber', 'localGovernmentArea', 'ward', 'alternativePhoneNumber'],
+        requiredFields: ['medicalLabName', 'logo', 'stateOfResidence', 'phoneNumber', 'localGovernmentArea', 'ward', 'alternativePhoneNumber'],
       },
       
     };

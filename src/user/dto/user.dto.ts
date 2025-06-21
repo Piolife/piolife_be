@@ -286,6 +286,11 @@ export class CreateUserDto {
   @ApiPropertyOptional()
   @IsString()
   @IsOptional()
+  logo?: string;
+
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
   alternativePhoneNumber?: string;
 
   @ApiPropertyOptional({ type: [String] })

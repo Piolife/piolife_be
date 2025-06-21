@@ -50,10 +50,6 @@ export class User {
   isVerified: boolean;
 
   @Prop()
-  profileImage: string;
-
-
-  @Prop()
   profilePicture: string;
 
 @Prop()
@@ -138,6 +134,12 @@ isOnline: boolean;
 
 @Prop()
 lastSeen?: Date;
+
+@Prop()
+logo?: string;
+
+@Prop()
+location?: string;
 
 }
 export const UserSchema = SchemaFactory.createForClass(User);

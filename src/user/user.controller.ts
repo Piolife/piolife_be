@@ -1,17 +1,15 @@
 import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiQuery, ApiConsumes, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
-import { Body, Controller, Get, Post, Query, BadRequestException, UnauthorizedException, UsePipes, ValidationPipe, UploadedFile, UseInterceptors, UploadedFiles, Param, UseGuards, HttpCode, HttpStatus, ForbiddenException, HttpException } from '@nestjs/common';
+import { Body, Controller, Get, Post, Query, BadRequestException, UnauthorizedException, UsePipes, ValidationPipe, UploadedFile, UseInterceptors, UploadedFiles, Param, UseGuards, HttpCode, HttpStatus, ForbiddenException, HttpException, Patch } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto, LoginDto, LogoutDto } from './dto/user.dto';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcryptjs';
 import { FileFieldsInterceptor, } from '@nestjs/platform-express';
-import { validateSync } from 'class-validator';
-import { plainToInstance } from 'class-transformer';
 import { User } from './Schema/user.schema';
-import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { EmailService } from 'src/services/email/email.sevice';
 import { PresenceGateway } from './presence.gateway';
+import { UpdateUserDto } from './dto/update-user.dto';
 
 @ApiTags(' User Auth')
 @Controller('users')
@@ -44,6 +42,63 @@ export class UserController {
 
     return this.userService.findAllMedicalPractitioners(languageList);
   }
+
+  @Get('nearby-specialized')
+  @ApiOperation({ summary: 'Get users with specific roles within a radius' })
+  @ApiQuery({ name: 'lat', type: Number, description: 'Latitude', required: true })
+  @ApiQuery({ name: 'lng', type: Number, description: 'Longitude', required: true })
+  @ApiQuery({ name: 'radius', type: Number, description: 'Radius in kilometers', required: false, example: 50 })
+  @ApiResponse({ status: 200, description: 'List of nearby specialized users', type: [User] })
+  @ApiResponse({ status: 400, description: 'Invalid query parameters' })
+  @ApiResponse({ status: 404, description: 'No users found' })
+  async getNearbySpecializedUsers(
+    @Query('lat') lat: string,
+    @Query('lng') lng: string,
+    @Query('radius') radius: string = '50',
+  ) {
+    const latitude = parseFloat(lat);
+    const longitude = parseFloat(lng);
+    const radiusKm = parseFloat(radius);
+  
+    if (
+      isNaN(latitude) ||
+      isNaN(longitude) ||
+      isNaN(radiusKm) ||
+      radiusKm <= 0
+    ) {
+      return {
+        message: 'Invalid lat, lng or radius',
+        statusCode: 400,
+      };
+    }
+  
+    const users = await this.userService.findNearbySpecializedUsers(
+      latitude,
+      longitude,
+      radiusKm,
+    );
+  
+    if (users.length === 0) {
+      return {
+        message: `No users found within ${radiusKm} km radius with specified roles`,
+      };
+    }
+  
+    return users;
+  }
+  
+    // @UseGuards(JwtAuthGuard)
+    @Get(':id')
+    // @ApiBearerAuth() 
+    @ApiOperation({ summary: 'Get a user by ID' }) 
+    @ApiParam({ name: 'id', required: true, description: 'User ID' }) 
+    @ApiResponse({ status: 200, description: 'User retrieved successfully', type: User }) 
+    @ApiResponse({ status: 400, description: 'Invalid User ID' }) 
+    @ApiResponse({ status: 401, description: 'Unauthorized' })
+    @ApiResponse({ status: 404, description: 'User not found' }) 
+    async getUser(@Param('id') id: string): Promise<User> {
+      return this.userService.getUserById(id);
+    }
 
   @Post('create')
 @ApiOperation({ summary: 'Create a new user' })
@@ -322,19 +377,22 @@ async requestReset(@Body() body: { email: string; role: 'client' | 'medical_prac
     return this.userService.resetPassword(resetToken, password, confirmPassword);
   }
 
-  // @UseGuards(JwtAuthGuard)
-  @Get(':id')
-  // @ApiBearerAuth() 
-  @ApiOperation({ summary: 'Get a user by ID' }) 
-  @ApiParam({ name: 'id', required: true, description: 'User ID' }) 
-  @ApiResponse({ status: 200, description: 'User retrieved successfully', type: User }) 
-  @ApiResponse({ status: 400, description: 'Invalid User ID' }) 
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 404, description: 'User not found' }) 
-  async getUser(@Param('id') id: string): Promise<User> {
-    return this.userService.getUserById(id);
+
+
+
+
+
+  @Patch(':id')
+  @ApiParam({ name: 'id', description: 'User ID' })
+  @ApiBody({ type: UpdateUserDto })
+  @ApiResponse({ status: 200, description: 'User updated', type: User })
+  @ApiResponse({ status: 404, description: 'User not found' })
+  async updateUser(
+    @Param('id') id: string,
+    @Body() updateUserDto: UpdateUserDto,
+  ): Promise<User> {
+    return this.userService.updateUser(id, updateUserDto);
   }
-
-
+  
 
 }

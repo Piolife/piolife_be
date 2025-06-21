@@ -1,4 +1,4 @@
-import { IsEnum, IsOptional, IsString, IsNotEmpty, IsEmail, ValidateIf, } from 'class-validator';
+import { IsEnum, IsOptional, IsString, IsNotEmpty, IsEmail, ValidateIf, IsNumber, } from 'class-validator';
 import { UserRole, UserStatus } from '../enum/user.enum';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
@@ -333,6 +333,17 @@ export class CreateUserDto {
   @IsString()
   @IsOptional()
   myReferralCode?: string;
+
+
+  @ApiPropertyOptional()
+  @IsNumber()
+  @IsOptional()
+  latitude: number;
+
+  @ApiPropertyOptional()
+  @IsNumber()
+  @IsOptional()
+  longitude: number;
 }
 
 

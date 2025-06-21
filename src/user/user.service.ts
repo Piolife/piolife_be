@@ -11,6 +11,8 @@ import { CloudinaryService } from 'src/services/cloudinary/cloudinary.service';
 import { EmailService } from 'src/services/email/email.sevice';
 import { WalletService } from 'src/wallet/wallet.service';
 import { SnowflakeIdGenerator } from 'utils/idGenerator';
+import { getDistanceFromLatLonInKm } from 'utils/haversine';
+import { UpdateUserDto } from './dto/update-user.dto';
 
 const snowflakeIdGenerator = new SnowflakeIdGenerator();
 
@@ -28,9 +30,6 @@ export class UserService {
 
   ) {}
 
-
- 
-  
 
   async createUser(
     createUserDto: CreateUserDto
@@ -77,12 +76,12 @@ export class UserService {
       },
       [UserRole.PHAMACY_SERVICES]: {
         prohibitedFields: [],
-        requiredFields: ['pharmacyName', 'logo', 'stateOfResidence', 'phoneNumber', 'localGovernmentArea', 'ward', 'alternativePhoneNumber'],
+        requiredFields: ['pharmacyName', 'logo', 'stateOfResidence', 'phoneNumber', 'localGovernmentArea', 'ward', 'alternativePhoneNumber', 'officerInCharge', 'latitude', 'longitude'],
       },
       
       [UserRole.MEDICAL_LAB_SERVICES]: {
         prohibitedFields: [],
-        requiredFields: ['medicalLabName', 'logo', 'stateOfResidence', 'phoneNumber', 'localGovernmentArea', 'ward', 'alternativePhoneNumber'],
+        requiredFields: ['medicalLabName', 'logo', 'stateOfResidence', 'phoneNumber', 'localGovernmentArea', 'ward', 'alternativePhoneNumber', 'officerInCharge', 'latitude', 'longitude'],
       },
       
     };
@@ -307,39 +306,6 @@ export class UserService {
       lastSeen: new Date(),
     });
   }
-//  async requestPasswordReset(
-//     email: string,
-//   ): Promise<{ message: string; otp: string; token: string }> {
-//     // Find the user by email
-//     const user = await this.userModel
-//       .findOne({ email: { $regex: new RegExp(`^${email}$`, 'i') } })
-//       .exec();
-//     if (!user) {
-//       throw new NotFoundException('User not found');
-//     }
-
-//     // Generate a new OTP
-//     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-
-//     // Create an OTP token
-//     const otpToken = this.jwtService.sign(
-//       { userId: user._id, otp },
-//       {
-//         secret: this.configService.get<string>('JWT_SECRET'),
-//         expiresIn: '30m',
-//       },
-//     );
-//     // Generate the OTP reset link
-//     const otpLink = `${process.env.FRONTEND_URL}/users/reset-password?token=${encodeURIComponent(otpToken)}&otp=${encodeURIComponent(otp)}`;
-
-//     // Send the OTP via email
-//     await this.emailService.SendResetPassword(user.email, otp, otpLink);
-//     return {
-//       message: 'Password reset OTP has been sent successfully',
-//       otp,
-//       token: otpToken,
-//     };
-//   }
 
 async requestPasswordReset(
   email: string,
@@ -452,7 +418,6 @@ async requestPasswordReset(
     }
   }
 
-
   async getUserById(userId: string): Promise<User> {
     if (!userId) {
       throw new BadRequestException('User ID is required');
@@ -475,15 +440,7 @@ async requestPasswordReset(
   
     return user;
   }
-  
-  
-  // async findAllMedicalPractitioners(): Promise<User[]> {
-  //   return this.userModel
-  //     .find({ role: 'medical_practitioner' })
-  //     .select('-password') 
-  //     .exec();
-  // }
-  
+   
 async findAllMedicalPractitioners(languages?: string[]): Promise<User[]> {
   const query: any = { role: 'medical_practitioner' };
 
@@ -494,5 +451,62 @@ async findAllMedicalPractitioners(languages?: string[]): Promise<User[]> {
   return this.userModel.find(query).select('-password').exec();
 }
 
+async findNearbySpecializedUsers(
+  lat: number,
+  lng: number,
+  radiusKm = 50,
+): Promise<(User & { distance: number })[]> {
+  const rolesToInclude = [
+    UserRole.PHAMACY_SERVICES,
+    UserRole.MEDICAL_LAB_SERVICES,
+    UserRole.MEDICAL_PRACTITIONER,
+  ];
 
+  const users = await this.userModel.find({
+    role: { $in: rolesToInclude },
+  }).select('-password').exec();
+  
+
+  const nearbyUsers: (User & { distance: number })[] = [];
+
+  for (const user of users) {
+    if (
+      typeof user.latitude !== 'number' ||
+      typeof user.longitude !== 'number'
+    )
+      continue;
+
+    const distance = getDistanceFromLatLonInKm(
+      lat,
+      lng,
+      user.latitude,
+      user.longitude,
+    );
+
+    if (distance <= radiusKm) {
+      nearbyUsers.push({ ...user.toObject(), distance });
+    }
+  }
+
+  nearbyUsers.sort((a, b) => a.distance - b.distance);
+
+  return nearbyUsers;
+}
+
+
+
+async updateUser(userId: string, updateUserDto: UpdateUserDto): Promise<User> {
+  const updatedUser = await this.userModel
+    .findByIdAndUpdate(userId, updateUserDto, {
+      new: true,
+      runValidators: true,
+    })
+    .select('-password');
+
+  if (!updatedUser) {
+    throw new NotFoundException(`User with ID ${userId} not found`);
+  }
+
+  return updatedUser;
+}
 }

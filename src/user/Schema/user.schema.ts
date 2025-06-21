@@ -52,8 +52,8 @@ export class User {
   @Prop()
   profilePicture: string;
 
-@Prop()
-maritalStatus: string;
+  @Prop()
+  maritalStatus: string;
 
 @Prop()
 dateOfBirth: string;
@@ -103,8 +103,10 @@ specialty?: Array<string>;
 
 @Prop()
 hospitalName: string;
+
 @Prop()
 officerInCharge: string;
+
 @Prop()
 alternatePhoneNumber: string;
 @Prop()
@@ -138,10 +140,16 @@ lastSeen?: Date;
 @Prop()
 logo?: string;
 
+
 @Prop()
-location?: string;
+latitude: number;
+
+@Prop()
+longitude: number;
 
 }
+
+
 export const UserSchema = SchemaFactory.createForClass(User);
 
 UserSchema.index({ email: 1, role: 1 }, { unique: true });

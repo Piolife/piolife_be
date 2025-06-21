@@ -459,7 +459,6 @@ async findNearbySpecializedUsers(
   const rolesToInclude = [
     UserRole.PHAMACY_SERVICES,
     UserRole.MEDICAL_LAB_SERVICES,
-    UserRole.MEDICAL_PRACTITIONER,
   ];
 
   const users = await this.userModel.find({

@@ -10,6 +10,7 @@ import { User } from './Schema/user.schema';
 import { EmailService } from 'src/services/email/email.sevice';
 import { PresenceGateway } from './presence.gateway';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { UserRole } from './enum/user.enum';
 
 @ApiTags(' User Auth')
 @Controller('users')
@@ -55,6 +56,7 @@ export class UserController {
     @Query('lat') lat: string,
     @Query('lng') lng: string,
     @Query('radius') radius: string = '50',
+    @Query('role') role?: string,
   ) {
     const latitude = parseFloat(lat);
     const longitude = parseFloat(lng);
@@ -72,20 +74,41 @@ export class UserController {
       };
     }
   
+    // Map string role to enum (optional filter)
+    let rolesToInclude: UserRole[] = [
+      UserRole.PHAMACY_SERVICES,
+      UserRole.MEDICAL_LAB_SERVICES,
+    ];
+  
+    if (role) {
+      const trimmedRole = role.trim().toLowerCase();
+      if (Object.values(UserRole).includes(trimmedRole as UserRole)) {
+        rolesToInclude = [trimmedRole as UserRole];
+      } else {
+        return {
+          message: `Invalid role. Must be one of: ${Object.values(UserRole).join(', ')}`,
+          statusCode: 400,
+        };
+      }
+     
+    }
+  
     const users = await this.userService.findNearbySpecializedUsers(
       latitude,
       longitude,
       radiusKm,
+      rolesToInclude,
     );
   
     if (users.length === 0) {
       return {
-        message: `No users found within ${radiusKm} km radius with specified roles`,
+        message: `No ${role} found within ${radiusKm} km `,
       };
     }
   
     return users;
   }
+  
   
     // @UseGuards(JwtAuthGuard)
     @Get(':id')

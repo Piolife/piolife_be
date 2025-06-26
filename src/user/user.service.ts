@@ -7,7 +7,6 @@ import { CreateUserDto } from './dto/user.dto';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcryptjs';
 import { JwtService } from '@nestjs/jwt';
-import { CloudinaryService } from 'src/services/cloudinary/cloudinary.service';
 import { EmailService } from 'src/services/email/email.sevice';
 import { WalletService } from 'src/wallet/wallet.service';
 import { SnowflakeIdGenerator } from 'utils/idGenerator';
@@ -28,7 +27,6 @@ export class UserService {
   private emailService: EmailService,
 
   ) {}
-
 
   async createUser(
     createUserDto: CreateUserDto
@@ -111,7 +109,6 @@ export class UserService {
     }
 
     
-
     const hashedPassword = await bcrypt.hash(password, 10);
   
     // Generate unique username (this will now be used as referral code)
@@ -456,16 +453,11 @@ async findNearbySpecializedUsers(
   lat: number,
   lng: number,
   radiusKm = 50,
+  rolesToInclude: UserRole[] = [UserRole.PHAMACY_SERVICES, UserRole.MEDICAL_LAB_SERVICES],
 ): Promise<(User & { distance: number })[]> {
-  const rolesToInclude = [
-    UserRole.PHAMACY_SERVICES,
-    UserRole.MEDICAL_LAB_SERVICES,
-  ];
-
   const users = await this.userModel.find({
     role: { $in: rolesToInclude },
   }).select('-password').exec();
-  
 
   const nearbyUsers: (User & { distance: number })[] = [];
 
@@ -492,6 +484,7 @@ async findNearbySpecializedUsers(
 
   return nearbyUsers;
 }
+
 
 
 async updateUser(userId: string, updateUserDto: UpdateUserDto): Promise<User> {

@@ -23,7 +23,6 @@ export class UserService {
   constructor(@InjectModel(User.name) private userModel: Model<UserDocument>,
   private readonly jwtService: JwtService,
   private readonly configService: ConfigService,
-  private readonly cloudinaryService: CloudinaryService,
   @Inject(forwardRef(() => WalletService)) private readonly walletService: WalletService,
   // private readonly walletService: WalletService,
   private emailService: EmailService,
@@ -76,12 +75,14 @@ export class UserService {
       },
       [UserRole.PHAMACY_SERVICES]: {
         prohibitedFields: [],
-        requiredFields: ['pharmacyName', 'logo', 'stateOfResidence', 'phoneNumber', 'localGovernmentArea', 'ward', 'alternativePhoneNumber', 'officerInCharge', 'latitude', 'longitude'],
+        requiredFields: ['pharmacyName', 'logo', 'stateOfResidence', 'phoneNumber', 'localGovernmentArea', 'ward', 'alternativePhoneNumber', 'officerInCharge', 'latitude', 'longitude',
+          'bankDetails'
+        ],
       },
       
       [UserRole.MEDICAL_LAB_SERVICES]: {
         prohibitedFields: [],
-        requiredFields: ['medicalLabName', 'logo', 'stateOfResidence', 'phoneNumber', 'localGovernmentArea', 'ward', 'alternativePhoneNumber', 'officerInCharge', 'latitude', 'longitude'],
+        requiredFields: ['medicalLabName', 'logo', 'stateOfResidence', 'phoneNumber', 'localGovernmentArea', 'ward', 'alternativePhoneNumber', 'officerInCharge', 'latitude', 'longitude', 'bankDetails'],
       },
       
     };
@@ -491,7 +492,6 @@ async findNearbySpecializedUsers(
 
   return nearbyUsers;
 }
-
 
 
 async updateUser(userId: string, updateUserDto: UpdateUserDto): Promise<User> {

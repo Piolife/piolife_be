@@ -162,12 +162,12 @@ class BankDetailsDto {
 export class CreateUserDto {
   @ApiProperty()
   @IsString()
-  @IsNotEmpty()
+  @IsOptional()
   firstName: string;
 
   @ApiProperty()
   @IsString()
-  @IsNotEmpty()
+  @IsOptional()
   lastName: string;
 
   @ApiPropertyOptional()

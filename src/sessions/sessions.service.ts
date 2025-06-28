@@ -151,8 +151,14 @@ export class SessionsService {
       status: 'pending',
     }).lean();
   }
-  async getSessionsForUser(userId: string) {
-    return this.sessionModel.find({ userId }).lean();
-  }  
   
+  // async getSessionsForUser(userId: string) {
+  //   return this.sessionModel.find({ userId }).lean();
+  // }  
+  async getSessionsForUser(userId: string) {
+    return this.sessionModel.find({ userId }).sort({ createdAt: -1 }).lean();
+
+  }
+   
+
 }

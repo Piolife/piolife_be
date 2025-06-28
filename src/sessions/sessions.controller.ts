@@ -1,7 +1,6 @@
 import { Controller, Post, Get, Body, Param, BadRequestException } from '@nestjs/common';
 import { SessionsService } from './sessions.service';
 import { BookSessionDto, CreateReviewDto, } from './dto/create-session.dto';
-import { AuthGuard } from '@nestjs/passport';
 
 @Controller('sessions')
 export class SessionsController {
@@ -12,6 +11,17 @@ export class SessionsController {
   ) {
     return this.service.getPendingSessionsForPractitioner(practitionerId);
   }
+
+
+  @Get('history/:userId')
+async getUserSessionHistory(@Param('userId') userId: string) {
+  if (!userId) {
+    throw new BadRequestException('userId is required');
+  }
+
+  return this.service.getSessionsForUser(userId);
+}
+
 
   @Post('practitioners')
   async getMatchingPractitioners(@Body() dto: BookSessionDto) {
@@ -34,7 +44,6 @@ async submitReview(
 
   return this.service.submitReview(dto, practitionerId);
 }
-
 
 
 }

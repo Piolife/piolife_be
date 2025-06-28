@@ -33,6 +33,18 @@ export class WalletController {
     return this.walletService.createWallet(userId);
   }
 
+  @Get('transactions/:userId')
+  @ApiOperation({ summary: 'Get transaction history for a user' })
+  @ApiParam({ name: 'userId', required: true, type: String })
+  @ApiResponse({ status: 200, description: 'Transaction history retrieved' })
+  async getTransactions(@Param('userId') userId: string) {
+    if (!userId) {
+      throw new NotFoundException('User ID is required');
+    }
+
+    return this.walletService.getTransactionHistorys(userId);
+  }
+
   @Post(':userId/deposit')
   async deposit(
     @Param('userId') userId: string,

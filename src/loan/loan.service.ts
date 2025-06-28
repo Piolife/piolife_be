@@ -83,7 +83,6 @@ export class LoanService {
     return loan;
   }
   
-
   async repayLoan(
     userId: string,
     loanId: string,
@@ -135,13 +134,13 @@ export class LoanService {
     await this.walletService.addTransaction(userId, {
       amount,
       timestamp: new Date(),
-      type: 'repayment',
+      type: 'loan repayment',
       description: `Loan repayment of ₦${amount} made. Remaining loan balance: ₦${remainingBalance}`,
     });
   
     // 🆕 Reset eligibility if loan is fully repaid
     if (remainingBalance === 0) {
-      const defaultEligibility = 20000; // or use wallet.defaultLoanEligibility if you have it stored
+      const defaultEligibility = 20000;
       await this.walletService.updateLoanEligibility(userId, defaultEligibility);
   
       // Optionally mark the loan as paid
@@ -156,8 +155,6 @@ export class LoanService {
     };
   }
   
-  
-
   async getLoanHistory(userId: string) {
     const loans = await this.loanModel.find({ userId }).lean();
     const repayments = await this.repaymentModel.find({ userId }).lean();
@@ -250,5 +247,6 @@ export class LoanService {
   
     return result;
   }
+  
   
 }

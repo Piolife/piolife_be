@@ -118,13 +118,6 @@ export class WalletService {
     await wallet.save(); 
   }
 
-  // async updateLoanBalance(userId: string, remainingBalance: number): Promise<Wallet> {
-  //   const wallet = await this.getWallet(userId);
-  //   wallet.loanBalance = remainingBalance;
-  //   await wallet.save();
-  //   return wallet;
-  // }
-
   async reduceLoanBalance(userId: string, amount: number): Promise<void> {
     const wallet = await this.getWallet(userId);
     wallet.loanBalance = Math.max(wallet.loanBalance - amount, 0);
@@ -184,6 +177,25 @@ export class WalletService {
     await practitionerWallet.save();
   }
   
+
+
+async getTransactionHistorys(userId: string): Promise<{ userId: string; balance: number; transactions: Array<{ amount: number; type: string; timestamp: Date }> }> {
+  const wallet = await this.walletModel.findOne({ userId }).lean();
+
+  if (!wallet) {
+    throw new NotFoundException('Wallet not found for user');
+  }
+
+  return {
+    userId: wallet.userId,
+    balance: wallet.balance,
+    transactions: (wallet.transactions || []).map(transaction => ({
+      ...transaction,
+      timestamp: transaction.timestamp || new Date(),
+    })),
+  };
+}
+
   
   
 }

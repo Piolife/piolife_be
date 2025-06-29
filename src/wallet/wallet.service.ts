@@ -33,6 +33,7 @@ export class WalletService {
       type: 'deposit',
       transactionRef: reference,
       status: status,
+      description: `Deposit of ₦${amount} with reference ${reference}`,
     };
 
     const updatedWallet = await this.walletModel.findOneAndUpdate(
@@ -125,7 +126,7 @@ export class WalletService {
   }
   
 
-  async addTransaction(userId: string, transaction: any): Promise<WalletDocument> {
+  async  addTransaction(userId: string, transaction: any): Promise<WalletDocument> {
     const wallet = await this.walletModel.findOne({ userId });
     if (!wallet) {
       throw new NotFoundException('Wallet not found for user');
@@ -143,7 +144,7 @@ export class WalletService {
     );
   }
 
-  async credit(userId: string, amount: number, description: string) {
+  async credit(userId: string, amount: number, description:string) {
     const wallet = await this.walletModel.findOne({ userId });
   
     if (!wallet) {
@@ -151,12 +152,12 @@ export class WalletService {
     }
   
     wallet.balance += amount;
-    wallet.transactions.push({ amount, type: TransactionType.REFERRAL_BONUS, timestamp: new Date() });
+    wallet.transactions.push({ amount, type: TransactionType.REFERRAL_BONUS, description:`Received ₦${amount}  for referral bonus`, timestamp: new Date() });
     await wallet.save();
   }
   
 
-  async transferFunds(userId: string, practitionerId: string, amount: number) {
+  async transferFunds(userId: string, practitionerId: string, amount: number ) {
     const userWallet = await this.walletModel.findOne({ userId });
     const practitionerWallet = await this.walletModel.findOne({ userId: practitionerId });
   
@@ -171,8 +172,8 @@ export class WalletService {
     userWallet.balance -= amount;
     practitionerWallet.balance += amount;
 
-    userWallet.transactions.push({ amount, type: TransactionType.CONSULTATION_PAYMENT, timestamp: new Date() });
-    practitionerWallet.transactions.push({ amount, type: TransactionType.CONSULTATION_FEE, timestamp: new Date() });
+    userWallet.transactions.push({ amount, type: TransactionType.CONSULTATION_PAYMENT,   description: `Paid ₦${amount} for medical consultation`, timestamp: new Date() });
+    practitionerWallet.transactions.push({ amount, type: TransactionType.CONSULTATION_FEE,  description: `Received ₦${amount} for consultation}`, timestamp: new Date() });
     await userWallet.save();
     await practitionerWallet.save();
   }

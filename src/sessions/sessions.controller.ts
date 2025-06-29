@@ -16,6 +16,19 @@ export class SessionsController {
     return this.service.getPendingSessionsForPractitioner(practitionerId);
   }
 
+  @Get('with-review/:sessionId')
+@ApiOperation({ summary: 'Get a session along with its review' })
+@ApiParam({ name: 'sessionId', required: true })
+@ApiResponse({ status: 200, description: 'Session with review fetched successfully' })
+async getSessionWithReview(@Param('sessionId') sessionId: string) {
+  if (!sessionId) {
+    throw new BadRequestException('sessionId is required');
+  }
+
+  return this.service.getSessionWithReview(sessionId);
+}
+
+
   @Get('history/:userId')
   @ApiOperation({ summary: 'Get all session history for a user' })
   @ApiParam({ name: 'userId', required: true, type: String })
@@ -25,6 +38,17 @@ export class SessionsController {
       throw new BadRequestException('userId is required');
     }
     return this.service.getSessionsForUser(userId);
+  }
+
+  @Get('history/:practitionerId')
+  @ApiOperation({ summary: 'Get all session history for a medical practitioner' })
+  @ApiParam({ name: 'practitionerId', required: true, type: String })
+  @ApiResponse({ status: 200, description: 'User session history retrieved successfully' })
+  async getPractitionerIdSessionHistory(@Param('practitionerId') practitionerId: string) {
+    if (!practitionerId) {
+      throw new BadRequestException('userId is required');
+    }
+    return this.service.getSessionsForPractitionerId(practitionerId);
   }
 
   @Post('practitioners')

@@ -152,13 +152,31 @@ export class SessionsService {
     }).lean();
   }
   
-  // async getSessionsForUser(userId: string) {
-  //   return this.sessionModel.find({ userId }).lean();
-  // }  
   async getSessionsForUser(userId: string) {
     return this.sessionModel.find({ userId }).sort({ createdAt: -1 }).lean();
 
   }
+
+  async getSessionsForPractitionerId(practitionerId: string) {
+    return this.sessionModel.find({practitionerId }).sort({ createdAt: -1 }).lean();
+
+  }
+
+  async getSessionWithReview(sessionId: string) {
+    const session = await this.sessionModel.findById(sessionId).lean();
+  
+    if (!session) {
+      throw new NotFoundException('Session not found');
+    }
+  
+    const review = await this.reviewModel.findOne({ sessionId }).lean();
+  
+    return {
+      session,
+      review: review || null,
+    };
+  }
+  
    
 
 }

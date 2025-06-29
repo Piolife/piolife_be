@@ -25,6 +25,7 @@ interface Transaction {
   type: TransactionType;
   payload?: any;
   reason?: string;
+  description?:string
 }
 
 export type WalletDocument = Wallet & Document;

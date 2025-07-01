@@ -46,9 +46,9 @@ export class UserService {
     email = email.toLowerCase().trim();
     phoneNumber = phoneNumber.trim();
   
-    if (!profilePicture) {
-      throw new BadRequestException('Profile Image is required.');
-    }
+    // if (!profilePicture) {
+    //   throw new BadRequestException('Profile Image is required.');
+    // }
   
     // Check if user already exists
     const existingUser = await this.userModel.findOne({ role, email }).exec();
@@ -60,11 +60,11 @@ export class UserService {
     const validationRules = {
       [UserRole.CLIENT]: {
         prohibitedFields: ['bankDetails', 'degreeCertificate', 'currentPracticeLicense', 'specialty', 'ward', 'localGovernmentArea', 'hospitalName', 'officerInCharge', 'languageProficiency'],
-        requiredFields: ['firstName', 'lastName', 'email', 'password', 'phoneNumber', 'gender', 'maritalStatus', 'dateOfBirth', 'countryOfResidence', 'countryOfOrigin', 'stateOfResidence', 'stateOfOrigin'],
+        requiredFields: ['profilePicture','firstName', 'lastName', 'email', 'password', 'phoneNumber', 'gender', 'maritalStatus', 'dateOfBirth', 'countryOfResidence', 'countryOfOrigin', 'stateOfResidence', 'stateOfOrigin'],
       },
       [UserRole.MEDICAL_PRACTITIONER]: {
         prohibitedFields: ['ward', 'localGovernmentArea', 'hospitalName', 'officerInCharge'],
-        requiredFields: ['firstName', 'lastName', 'email', 'password', 'phoneNumber', 'specialty', 'gender', 'maritalStatus', 'dateOfBirth', 'countryOfResidence', 'countryOfOrigin', 'stateOfResidence', 'stateOfOrigin', 'languageProficiency', 'bankDetails'],
+        requiredFields: ['profilePicture','firstName', 'lastName', 'email', 'password', 'phoneNumber', 'specialty', 'gender', 'maritalStatus', 'dateOfBirth', 'countryOfResidence', 'countryOfOrigin', 'stateOfResidence', 'stateOfOrigin', 'languageProficiency', 'bankDetails'],
         mustHaveFiles: { degreeCertificate, currentPracticeLicense },
       },
       [UserRole.EMERGENCY_SERVICES]: {
@@ -72,14 +72,14 @@ export class UserService {
         requiredFields: ['hospitalName', 'officerInCharge', 'bankDetails', 'ward', 'localGovernmentArea', 'stateOfResidence'],
       },
       [UserRole.PHAMACY_SERVICES]: {
-        prohibitedFields: [],
+        prohibitedFields: ["profilePicture"],
         requiredFields: ['pharmacyName', 'logo', 'stateOfResidence', 'phoneNumber', 'localGovernmentArea', 'ward', 'alternativePhoneNumber', 'officerInCharge', 'latitude', 'longitude',
           'bankDetails'
         ],
       },
       
       [UserRole.MEDICAL_LAB_SERVICES]: {
-        prohibitedFields: [],
+        prohibitedFields: ["profilePicture"],
         requiredFields: ['medicalLabName', 'logo', 'stateOfResidence', 'phoneNumber', 'localGovernmentArea', 'ward', 'alternativePhoneNumber', 'officerInCharge', 'latitude', 'longitude', 'bankDetails'],
       },
       
@@ -144,7 +144,7 @@ export class UserService {
       const referrer = await this.userModel.findOne({ username: referralCode });
   
       if (referrer) {
-        await this.walletService.credit(referrer._id, 1000, 'Referral bonus');
+        await this.walletService.credit(referrer._id, 1000, 'Referral bonus',);
         referrer.referralCount = (referrer.referralCount || 0) + 1;
         await referrer.save();
       }

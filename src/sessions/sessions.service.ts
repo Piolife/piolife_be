@@ -162,6 +162,7 @@ async getSessionsForUser(userId: string) {
       $or: [{ userId }, { practitionerId: userId }],
     })
     .sort({ createdAt: -1 })
+    .limit(100)
     .lean();
 
   // Collect all unique user + practitioner IDs

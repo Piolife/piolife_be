@@ -69,7 +69,7 @@ export class UserService {
       },
       [UserRole.EMERGENCY_SERVICES]: {
         prohibitedFields: ['firstName', 'lastName', 'email', 'password', 'specialty', 'languageProficiency', 'gender', 'maritalStatus', 'dateOfBirth'],
-        requiredFields: ['hospitalName', 'officerInCharge', 'bankDetails', 'ward', 'localGovernmentArea', 'stateOfResidence'],
+        requiredFields: ['hospitalName', 'officerInCharge', 'bankDetails', 'ward', 'localGovernmentArea', 'stateOfResidence','alternativePhoneNumber',],
       },
       [UserRole.PHAMACY_SERVICES]: {
         prohibitedFields: ["profilePicture"],

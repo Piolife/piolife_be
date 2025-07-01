@@ -25,11 +25,13 @@ export class UserController {
 
   ) {}
 
-  
-  // @Get('practitioners')
-  // getPractitioners() {
-  //   return this.userService.findAllMedicalPractitioners();
-  // }
+  @Get('verify-email')
+  @ApiOperation({ summary: 'Verify user email' })
+  @ApiQuery({ name: 'token', required: false, description: 'Verification token' })
+  @ApiQuery({ name: 'otp', required: false, description: 'One-Time Password' })
+  async verifyEmail(@Query('token') token?: string, @Query('otp') otp?: string): Promise<any> {
+    return this.userService.verifyEmail(token, otp);
+  }
 
   @Get('medical-practitioners')
   async getMedicalPractitioners(
@@ -214,13 +216,7 @@ export class UserController {
     return this.userService.createUser(createUserDto);
   }
 
-  @Get('verify-email')
-  @ApiOperation({ summary: 'Verify user email' })
-  @ApiQuery({ name: 'token', required: false, description: 'Verification token' })
-  @ApiQuery({ name: 'otp', required: false, description: 'One-Time Password' })
-  async verifyEmail(@Query('token') token?: string, @Query('otp') otp?: string): Promise<any> {
-    return this.userService.verifyEmail(token, otp);
-  }
+
 
   @Post('login')
   @ApiOperation({ summary: 'User login' })

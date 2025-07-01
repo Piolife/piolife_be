@@ -68,8 +68,8 @@ export class UserService {
         mustHaveFiles: { degreeCertificate, currentPracticeLicense },
       },
       [UserRole.EMERGENCY_SERVICES]: {
-        prohibitedFields: ['firstName', 'lastName', 'email', 'password', 'specialty', 'languageProficiency', 'gender', 'maritalStatus', 'dateOfBirth'],
-        requiredFields: ['hospitalName', 'officerInCharge', 'bankDetails', 'ward', 'localGovernmentArea', 'stateOfResidence','alternativePhoneNumber',],
+        prohibitedFields: ['firstName', 'lastName',   'specialty', 'languageProficiency', 'gender', 'maritalStatus', 'dateOfBirth'],
+        requiredFields: ['hospitalName', 'officerInCharge', 'bankDetails', 'ward', 'localGovernmentArea', 'stateOfResidence','alternativePhoneNumber', 'email', 'password',],
       },
       [UserRole.PHAMACY_SERVICES]: {
         prohibitedFields: ["profilePicture"],
@@ -114,7 +114,7 @@ export class UserService {
     // Generate unique username (this will now be used as referral code)
     let username: string;
 
-    if (role === UserRole.PHAMACY_SERVICES || role === UserRole.MEDICAL_LAB_SERVICES) {
+    if (role === UserRole.PHAMACY_SERVICES || role === UserRole.MEDICAL_LAB_SERVICES || role === UserRole.EMERGENCY_SERVICES) {
       const facilityId = this.generateFacilityId(createUserDto, role);
       username = facilityId;
     } else {

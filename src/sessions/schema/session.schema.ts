@@ -48,6 +48,9 @@ rating?: number;
 @Prop({ default: false })
 reviewSubmitted: boolean;
 
+@Prop()
+createdAt?: number;
+
 }
 
 export const SessionSchema = SchemaFactory.createForClass(Session);

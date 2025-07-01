@@ -7,6 +7,7 @@ import { User, UserDocument } from 'src/user/Schema/user.schema';
 import { WalletService } from 'src/wallet/wallet.service'; 
 import { MedicalIssue, MedicalIssueDocument } from 'src/medical-issues/schema/medical-issue.schema';
 import { UserRole } from 'src/user/enum/user.enum';
+import * as moment from 'moment';
 
 import { Review, ReviewDocument } from './schema/review.schema';
 
@@ -152,10 +153,88 @@ export class SessionsService {
     }).lean();
   }
   
-  async getSessionsForUser(userId: string) {
-    return this.sessionModel.find({ userId }).sort({ createdAt: -1 }).lean();
 
-  }
+
+
+async getSessionsForUser(userId: string) {
+  const sessions = await this.sessionModel
+    .find({
+      $or: [{ userId }, { practitionerId: userId }],
+    })
+    .sort({ createdAt: -1 })
+    .lean();
+
+  // Collect all unique user + practitioner IDs
+  const ids = new Set<string>();
+  sessions.forEach(session => {
+    if (session.userId) ids.add(session.userId.toString());
+    if (session.practitionerId) ids.add(session.practitionerId.toString());
+  });
+
+  // Fetch related users/practitioners with needed fields
+  const users = await this.userModel
+    .find(
+      { _id: { $in: Array.from(ids) } },
+      { _id: 1, firstName: 1, lastName: 1, userName: 1, profilePicture: 1 }
+    )
+    .lean();
+
+  // Map userId => user details
+  const userMap = users.reduce((acc, user) => {
+    acc[user._id.toString()] = {
+      firstName: user.firstName,
+      lastName: user.lastName,
+      userName: user.username,
+      profilePicture: user.profilePicture,
+    };
+    return acc;
+  }, {} as Record<string, {
+    firstName?: string;
+    lastName?: string;
+    userName?: string;
+    profilePicture?: any;
+  }>);
+
+  // Build result grouped by year/month
+  const result: Record<string, Record<string, any[]>> = {};
+
+  sessions.forEach(session => {
+    const date = moment(session.createdAt);
+    const year = date.format('YYYY');
+    const month = date.format('MMMM');
+
+    const userInfo = userMap[session.userId?.toString()] || {};
+    const practitionerInfo = userMap[session.practitionerId?.toString()] || {};
+
+    const formattedSession = {
+      ...session,
+      client: {
+        id: session.userId,
+        firstName: userInfo.firstName || null,
+        lastName: userInfo.lastName || null,
+        userName: userInfo.userName || null,
+        profilePicture: userInfo.profilePicture || null,
+      },
+      practitioner: {
+        id: session.practitionerId,
+        firstName: practitionerInfo.firstName || null,
+        lastName: practitionerInfo.lastName || null,
+        userName: practitionerInfo.userName || null,
+        profilePicture: practitionerInfo.profilePicture || null,
+      },
+    };
+
+    if (!result[year]) result[year] = {};
+    if (!result[year][month]) result[year][month] = [];
+
+    result[year][month].push(formattedSession);
+  });
+
+  return result;
+}
+
+
+
 
   async getSessionsForPractitionerId(practitionerId: string) {
     return this.sessionModel.find({practitionerId }).sort({ createdAt: -1 }).lean();

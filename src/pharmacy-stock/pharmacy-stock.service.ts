@@ -30,6 +30,7 @@ export class PharmacyStockService {
     return this.stockModel.find().sort({ _id: -1 }).exec();
   }
   
+  
 async buyItem(stockId: string, quantity: number, userId: string) {
     const item = await this.stockModel.findById(stockId);
     if (!item) throw new NotFoundException('Stock item not found');

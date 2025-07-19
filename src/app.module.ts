@@ -1,28 +1,15 @@
 import { Module, ValidationPipe } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
-// import { UserModule } from './user/user.module';
-// import { EmailModule } from './services/email.module';
-// import { EmailService } from './services/email.service';
 import { APP_PIPE } from '@nestjs/core';
-// import { CloudinaryModule } from './cloudinary/cloudinary.module';
 import * as cloudinary from 'cloudinary';
-// import { NotificationModule } from './notification/notification.module';
-// import { ContentModule } from './content/content.module';
-// import { ChatModule } from './chat/chat.module';
-// import { PersonalGroupChatModule } from './personal-group-chat/personal-group-chat.module';
-// import { SearchModule } from './search/search.module';
-// import { ScheduleModule } from '@nestjs/schedule';
-// import { RenderService } from './render-service/render-service';
-// import { PaymentModule } from './payment/payment.module';
-// import { WithdrawalModule } from './withdrawal/withdrawal.module';
-// import { UserModule } from './user/user.module';
 import { AuthModule } from './auth/auth.module';
 import { WalletModule } from './wallet/wallet.module';
 import { UserModule } from './user/user.module';
 import { LoanModule } from './loan/loan.module';
 import { MedicalIssuesModule } from './medical-issues/medical-issues.module';
 import { SessionsModule } from './sessions/sessions.module';
+import { PharmacyStockModule } from './pharmacy-stock/pharmacy-stock.module';
 
 @Module({
   imports: [
@@ -44,6 +31,7 @@ import { SessionsModule } from './sessions/sessions.module';
     LoanModule,
     MedicalIssuesModule,
     SessionsModule,
+    PharmacyStockModule,
   ],
   controllers: [],
   providers: [

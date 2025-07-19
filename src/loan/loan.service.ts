@@ -21,17 +21,79 @@ export class LoanService {
     private readonly walletService: WalletService,
   ) {}
 
+  // async requestLoan(userId: string, amount: number): Promise<Loan> {
+  //   const wallet = await this.walletService.getWallet(userId);
+  
+  //   // Check if user has any unpaid (active) loan
+  //   const activeLoan = await this.loanModel.findOne({
+  //     userId,
+  //     status: 'approved',
+  //   });
+  
+  //   if (activeLoan) {
+  //     // Check if the loan is fully repaid by aggregating repayments
+  //     const totalRepaidData = await this.repaymentModel.aggregate([
+  //       { $match: { loanId: activeLoan._id.toString() } },
+  //       { $group: { _id: null, total: { $sum: '$amount' } } },
+  //     ]);
+  
+  //     const totalRepaid = totalRepaidData[0]?.total || 0;
+  
+  //     if (totalRepaid < activeLoan.amount) {
+  //       const remaining = activeLoan.amount - totalRepaid;
+  //       throw new BadRequestException(`You have an active loan with ₦${remaining} remaining. Please repay it before requesting a new one.`);
+  //     } else {
+  //       // Optional: update loan status to repaid if fully paid
+  //       activeLoan.status = 'paid';
+  //       await activeLoan.save();
+  //     }
+  //   }
+  
+  //   if (wallet.loanEligibility < amount) {
+  //     throw new BadRequestException(
+  //       `Requested amount exceeds eligibility. You are eligible to loan ₦${wallet.loanEligibility}`,
+  //     );
+  //   }
+  
+  //   // Create and approve loan instantly
+  //   const dueDate = new Date();
+  //   dueDate.setDate(dueDate.getDate() + 30);
+  
+  //   const loan = await this.loanModel.create({
+  //     userId,
+  //     amount,
+  //     status: 'approved',
+  //     dueDate,
+  //   });
+  
+  //   await loan.save();
+  
+  //   await this.walletService.reduceLoanEligibility(userId, amount);
+  //   await this.walletService.addFunds(userId, amount);
+  
+  //   await this.walletService.addTransaction(userId, {
+  //     amount,
+  //     timestamp: new Date(),
+  //     type: 'loan',
+  //     description: 'Loan approved',
+  //   });
+  
+  //   await this.walletService.updateLoanBalance(userId, loan.amount);
+  
+  //   return loan;
+  // }
+
+
   async requestLoan(userId: string, amount: number): Promise<Loan> {
     const wallet = await this.walletService.getWallet(userId);
   
-    // Check if user has any unpaid (active) loan
+    // Check for existing unpaid loan
     const activeLoan = await this.loanModel.findOne({
       userId,
       status: 'approved',
     });
   
     if (activeLoan) {
-      // Check if the loan is fully repaid by aggregating repayments
       const totalRepaidData = await this.repaymentModel.aggregate([
         { $match: { loanId: activeLoan._id.toString() } },
         { $group: { _id: null, total: { $sum: '$amount' } } },
@@ -39,11 +101,12 @@ export class LoanService {
   
       const totalRepaid = totalRepaidData[0]?.total || 0;
   
-      if (totalRepaid < activeLoan.amount) {
-        const remaining = activeLoan.amount - totalRepaid;
-        throw new BadRequestException(`You have an active loan with ₦${remaining} remaining. Please repay it before requesting a new one.`);
+      if (totalRepaid < activeLoan.totalRepayableAmount) {
+        const remaining = activeLoan.totalRepayableAmount - totalRepaid;
+        throw new BadRequestException(
+          `You have an active loan with ₦${remaining} remaining. Please repay it before requesting a new one.`
+        );
       } else {
-        // Optional: update loan status to repaid if fully paid
         activeLoan.status = 'paid';
         await activeLoan.save();
       }
@@ -51,17 +114,22 @@ export class LoanService {
   
     if (wallet.loanEligibility < amount) {
       throw new BadRequestException(
-        `Requested amount exceeds eligibility. You are eligible to loan ₦${wallet.loanEligibility}`,
+        `Requested amount exceeds eligibility. You are eligible to loan ₦${wallet.loanEligibility}`
       );
     }
   
-    // Create and approve loan instantly
+    // 3% interest
+    const interest = parseFloat((amount * 0.03).toFixed(2));
+    const totalRepayableAmount = parseFloat((amount + interest).toFixed(2));
+  
     const dueDate = new Date();
     dueDate.setDate(dueDate.getDate() + 30);
   
     const loan = await this.loanModel.create({
       userId,
       amount,
+      interest, 
+      totalRepayableAmount,
       status: 'approved',
       dueDate,
     });
@@ -75,10 +143,10 @@ export class LoanService {
       amount,
       timestamp: new Date(),
       type: 'loan',
-      description: 'Loan approved',
+      description: `Loan approved with 3% interest and your wallet has been credited with ${amount}.`,
     });
   
-    await this.walletService.updateLoanBalance(userId, loan.amount);
+    await this.walletService.updateLoanBalance(userId, totalRepayableAmount);
   
     return loan;
   }
@@ -147,7 +215,6 @@ export class LoanService {
       loan.status = 'paid';
       await loan.save();
     }
-  
     return {
       message: remainingBalance === 0 ? 'Loan fully repaid.' : 'Loan repayment successful.',
       totalRepaid: newTotalRepaid,

@@ -15,6 +15,7 @@ export enum TransactionType {
   CONSULTATION_PAYMENT = 'consultation_payment',
   LOAN_DISBURSEMENT = 'loan_disbursement',
   LOAN_REPAYMENT = 'loan_repayment',
+  STOCK_PURCHASE = 'stock_purchase',
 
 
 }

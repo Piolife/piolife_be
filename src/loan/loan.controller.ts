@@ -55,7 +55,6 @@ export class LoanController {
       walletBalance: wallet.balance,
     };
   }
-
   @Get('user/:userId')
   async getUserLoansWithBalance(@Param('userId') userId: string) {
     const loans = await this.loanService.getUserLoansWithBalance(userId);

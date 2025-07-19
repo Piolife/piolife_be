@@ -26,8 +26,12 @@ export class Loan {
   @Prop({ required: true })
   dueDate: Date;
 
-  @Prop({ default: 0 })
-  interestRate: number;
+  @Prop()
+interest: number;
+
+@Prop()
+totalRepayableAmount: number;
+
 
   @Prop()
   createdAt:Date

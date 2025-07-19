@@ -366,7 +366,7 @@ async requestReset(@Body() body: { email: string; role: 'client' | 'medical_prac
     schema: {
       type: 'object',
       properties: {
-        token: { type: 'string', example: 'jwt-token-here' },
+        email: { type: 'string', example: 'email@example.com' },
         otp: { type: 'string', example: '123456' },
       },
     },

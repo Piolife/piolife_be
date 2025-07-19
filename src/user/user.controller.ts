@@ -371,8 +371,8 @@ async requestReset(@Body() body: { email: string; role: 'client' | 'medical_prac
       },
     },
   })
-  async verifyResetOtp(@Body('token') token: string, @Body('otp') otp: string) {
-    return this.userService.verifyResetPasswordOtp(token, otp);
+  async verifyResetOtp(@Body('email') email: string, @Body('otp') otp: string) {
+    return this.userService.verifyResetOtp(email, otp);
   }
 
   @Post('reset-password')

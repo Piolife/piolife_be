@@ -12,6 +12,8 @@ import { WalletService } from 'src/wallet/wallet.service';
 import { SnowflakeIdGenerator } from 'utils/idGenerator';
 import { getDistanceFromLatLonInKm } from 'utils/haversine';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import type { Cache } from 'cache-manager';
 
 const snowflakeIdGenerator = new SnowflakeIdGenerator();
 
@@ -25,8 +27,13 @@ export class UserService {
   @Inject(forwardRef(() => WalletService)) private readonly walletService: WalletService,
   // private readonly walletService: WalletService,
   private emailService: EmailService,
+  @Inject(CACHE_MANAGER)
+  private cacheManager: Cache,
 
-  ) {}
+  ) {
+  
+
+  }
 
   async createUser(
     createUserDto: CreateUserDto
@@ -305,116 +312,83 @@ export class UserService {
     });
   }
 
-async requestPasswordReset(
-  email: string,
-  role: 'client' | 'medical_practitioner' | 'emergency_services' |'real_estate_services' | 'insurance_services',
-): Promise<{ message: string; otp: string; token: string }> {
-  // Find the user by email and role (case-insensitive email)
-  const user = await this.userModel
-    .findOne({
+  async requestPasswordReset(
+    email: string,
+    role: 'client' | 'medical_practitioner' | 'emergency_services' | 'real_estate_services' | 'insurance_services',
+  ): Promise<{ message: string }> {
+    const user = await this.userModel.findOne({
       email: { $regex: new RegExp(`^${email}$`, 'i') },
       role,
-    })
-    .exec();
-
-  if (!user) {
-    throw new NotFoundException(`Email and Role combination not found`);
+    });
+  
+    if (!user) throw new NotFoundException('User not found');
+  
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otpHash = await bcrypt.hash(otp, 10);
+  
+    // Store in Redis or temporary DB (with expiry)
+    await (this.cacheManager as any).set(`otp:${user._id}`, otpHash, { ttl: 600 }); // 10 mins
+  
+    await this.emailService.SendResetPassword(user.email, otp, "");
+  
+    return { message: 'OTP sent to your email address' };
   }
-
-  // Generate a new OTP
-  const otp = Math.floor(100000 + Math.random() * 900000).toString();
-
-  // Create a JWT token that includes email, role, and OTP
-  const otpToken = this.jwtService.sign(
-    {
-      email: user.email,
-      role: user.role,
-      otp,
-    },
-    {
-      secret: this.configService.get<string>('JWT_SECRET'),
-      expiresIn: '30m',
-    },
-  );
-
-  // Generate the OTP reset link
-  const otpLink = `${process.env.FRONTEND_URL}/users/reset-password?token=${encodeURIComponent(
-    otpToken,
-  )}&otp=${encodeURIComponent(otp)}`;
-
-  // Send the OTP via email
-  await this.emailService.SendResetPassword(user.email, otp, otpLink);
-
-  return {
-    message: 'Password reset OTP has been sent successfully',
-    otp,
-    token: otpToken,
-  };
-}
-
-  async verifyResetPasswordOtp(
-    token: string,
-    otp: string,
-  ): Promise<{ message: string; token: string }> {
-    if (!token || !otp) {
-      throw new BadRequestException('Token and OTP are required');
-    }
-
-    try {
-      const secret = this.configService.get<string>('JWT_SECRET');
-      const decoded = this.jwtService.verify(token, { secret });
-
-      if (otp !== decoded.otp) {
-        throw new BadRequestException('Invalid OTP');
-      }
+  
 
 
-       const user = await this.userModel.findById(decoded.userId).exec();
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-
-      return {
-        message: 'Password reset OTP has been verified successfully.',
-        token,
-      };
-    } catch (error) {
-      throw new BadRequestException('Invalid or expired token');
-    }
+  async verifyResetOtp(email: string, otp: string): Promise<{ token: string }> {
+    const user = await this.userModel.findOne({
+      email: { $regex: new RegExp(`^${email}$`, 'i') },
+    });
+  
+    if (!user) throw new NotFoundException('User not found');
+  
+    const storedOtpHash = await (this.cacheManager as any).get(`otp:${user._id}`);
+    if (!storedOtpHash) throw new BadRequestException('OTP expired or invalid');
+  
+    const isValid = await bcrypt.compare(otp, storedOtpHash);
+    if (!isValid) throw new BadRequestException('Incorrect OTP');
+  
+    // Remove used OTP
+    await (this.cacheManager as any).del(`otp:${user._id}`);
+  
+    // Issue short-lived token (e.g., 15 mins) to reset password
+    const token = this.jwtService.sign(
+      { userId: user._id },
+      { expiresIn: '15m' }
+    );
+  
+    return { token };
   }
+  
+
+
 
 
   async resetPassword(
-    resetToken: string,
+    token: string,
     password: string,
-    confirmPassword: string,
+    confirmPassword: string
   ): Promise<{ message: string }> {
     if (password !== confirmPassword) {
-      throw new BadRequestException('Passwords do not match.');
+      throw new BadRequestException('Passwords do not match');
     }
-
-    if (!resetToken) {
-      throw new BadRequestException('Invalid or missing reset token.');
-    }
-
+  
     try {
-      const secret = this.configService.get<string>('JWT_SECRET');
-      const decoded = this.jwtService.verify(resetToken, { secret });
-
-      const user = await this.userModel.findById(decoded.userId).exec();
-      if (!user) {
-        throw new NotFoundException('User not found');
-      }
-
+      const decoded = this.jwtService.verify(token);
+      const user = await this.userModel.findById(decoded.userId);
+  
+      if (!user) throw new NotFoundException('User not found');
+  
       user.password = await bcrypt.hash(password, 10);
       await user.save();
-
-      return { message: 'Password has been reset successfully.' };
+  
+      return { message: 'Password has been reset successfully' };
     } catch (error) {
-      this.logger.error('Error resetting password:', error);
-      throw new UnauthorizedException('Invalid or expired reset token.');
+      throw new UnauthorizedException('Invalid or expired token');
     }
   }
+  
 
   async getUserById(userId: string): Promise<User> {
     if (!userId) {

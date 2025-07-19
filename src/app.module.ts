@@ -10,9 +10,13 @@ import { LoanModule } from './loan/loan.module';
 import { MedicalIssuesModule } from './medical-issues/medical-issues.module';
 import { SessionsModule } from './sessions/sessions.module';
 import { PharmacyStockModule } from './pharmacy-stock/pharmacy-stock.module';
+import { CacheModule } from '@nestjs/cache-manager';
 
 @Module({
   imports: [
+       CacheModule.register({
+          isGlobal: true, 
+        }),
     ConfigModule.forRoot({
       envFilePath: '.env',
       isGlobal: true,

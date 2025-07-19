@@ -9,10 +9,15 @@ import { EmailModule } from 'src/services/email/email.module';
 import { WalletSchema } from 'src/wallet/schema/wallet.schema';
 import { WalletModule } from 'src/wallet/wallet.module';
 import { PresenceGateway } from './presence.gateway';
+import { CacheModule } from '@nestjs/cache-manager';
+
 
 
 @Module({
   imports: [
+    CacheModule.register({
+      isGlobal: true, 
+    }),
       forwardRef(() => WalletModule),
     MongooseModule.forFeature([{ name: 'User', schema: UserSchema }]),
     MongooseModule.forFeature([{ name: 'Wallet', schema: WalletSchema }]),

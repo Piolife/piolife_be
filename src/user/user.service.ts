@@ -52,10 +52,10 @@ export class UserService {
     // Normalize
     email = email.toLowerCase().trim();
     phoneNumber = phoneNumber.trim();
-  
-    // if (!profilePicture) {
-    //   throw new BadRequestException('Profile Image is required.');
-    // }
+    const normalizedRole = role?.toString().trim().toLowerCase();
+    if (!Object.values(UserRole).includes(normalizedRole as UserRole)) {
+      throw new BadRequestException('Invalid role specified.');
+    }
   
     // Check if user already exists
     const existingUser = await this.userModel.findOne({ role, email }).exec();
@@ -218,8 +218,6 @@ export class UserService {
   
     return username;
   }
-  
-
 
   async verifyEmail(token?: string, otp?: string): Promise<any> {
     if (!token) {
@@ -314,25 +312,31 @@ export class UserService {
 
   async requestPasswordReset(
     email: string,
-    role: 'client' | 'medical_practitioner' | 'emergency_services' | 'real_estate_services' | 'insurance_services',
+    role?: 'client' | 'medical_practitioner' | 'emergency_services' | 'real_estate_services' | 'insurance_services',
   ): Promise<{ message: string }> {
+    if (!role) {
+      throw new BadRequestException('Role is required');
+    }
+  
     const user = await this.userModel.findOne({
       email: { $regex: new RegExp(`^${email}$`, 'i') },
       role,
     });
   
-    if (!user) throw new NotFoundException('User not found');
+    if (!user) {
+      throw new NotFoundException('User does not have an account with this role');
+    }
   
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const otpHash = await bcrypt.hash(otp, 10);
   
-    // Store in Redis or temporary DB (with expiry)
-    await (this.cacheManager as any).set(`otp:${user._id}`, otpHash, { ttl: 600 }); // 10 mins
+    await (this.cacheManager as any).set(`otp:${user._id}`, otpHash, { ttl: 600 });
   
-    await this.emailService.SendResetPassword(user.email, otp, "");
+    await this.emailService.SendResetPassword(user.email, otp, '');
   
     return { message: 'OTP sent to your email address' };
   }
+  
   
 
 
@@ -361,9 +365,6 @@ export class UserService {
     return { token };
   }
   
-
-
-
 
   async resetPassword(
     token: string,

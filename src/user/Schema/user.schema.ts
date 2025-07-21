@@ -28,7 +28,6 @@ export class User {
   })
   _id: string;
 
-
   @Prop()
   firstName: string;
 
@@ -51,14 +50,10 @@ export class User {
   isVerified: boolean;
 
   @Prop()
-  profileImage: string;
-
-
-  @Prop()
   profilePicture: string;
 
-@Prop()
-maritalStatus: string;
+  @Prop()
+  maritalStatus: string;
 
 @Prop()
 dateOfBirth: string;
@@ -74,6 +69,8 @@ stateOfOrigin: string;
 
 @Prop()
 countryOfResidence: string;
+@Prop()
+username : string;
 
 @Prop()
 stateOfResidence: string;
@@ -102,14 +99,20 @@ bankDetails?: BankDetails[];
 @Prop()
 languageProficiency?: Array<string>;
 @Prop()
-specialty: string;
+specialty?: Array<string>;
 
 @Prop()
 hospitalName: string;
+
 @Prop()
 officerInCharge: string;
+
 @Prop()
 alternatePhoneNumber: string;
+@Prop()
+pharmacyName: string;
+@Prop()
+medicalLabName: string;
 
 @Prop()
 localGovernmentArea: string;
@@ -120,8 +123,33 @@ policyAgreement: boolean;
 @Prop()
 ward: string;
 
+@Prop({ unique: true }) 
+myReferralCode: string;
+
+@Prop()
+referralCode?: string;
+@Prop({ default: 0 })
+referralCount: number;
+
+@Prop({ default: false })
+isOnline: boolean;
+
+@Prop()
+lastSeen?: Date;
+
+@Prop()
+logo?: string;
+
+
+@Prop()
+latitude: number;
+
+@Prop()
+longitude: number;
 
 }
+
+
 export const UserSchema = SchemaFactory.createForClass(User);
 
 UserSchema.index({ email: 1, role: 1 }, { unique: true });

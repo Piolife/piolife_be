@@ -1,15 +1,16 @@
 import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiQuery, ApiConsumes, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
-import { Body, Controller, Get, Post, Query, BadRequestException, UnauthorizedException, UsePipes, ValidationPipe, UploadedFile, UseInterceptors, UploadedFiles, Param, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, Query, BadRequestException, UnauthorizedException, UsePipes, ValidationPipe, UploadedFile, UseInterceptors, UploadedFiles, Param, UseGuards, HttpCode, HttpStatus, ForbiddenException, HttpException, Patch } from '@nestjs/common';
 import { UserService } from './user.service';
-import { CreateUserDto, LoginDto } from './dto/user.dto';
+import { CreateUserDto, LoginDto, LogoutDto } from './dto/user.dto';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcryptjs';
 import { FileFieldsInterceptor, } from '@nestjs/platform-express';
-import { validateSync } from 'class-validator';
-import { plainToInstance } from 'class-transformer';
 import { User } from './Schema/user.schema';
-import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
+import { EmailService } from 'src/services/email/email.sevice';
+import { PresenceGateway } from './presence.gateway';
+import { UpdateUserDto } from './dto/update-user.dto';
+import { UserRole } from './enum/user.enum';
 
 @ApiTags(' User Auth')
 @Controller('users')
@@ -18,7 +19,111 @@ export class UserController {
     private readonly userService: UserService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
+  private emailService: EmailService,
+  private readonly presenceGateway: PresenceGateway,
+
+
   ) {}
+
+  @Get('verify-email')
+  @ApiOperation({ summary: 'Verify user email' })
+  @ApiQuery({ name: 'token', required: false, description: 'Verification token' })
+  @ApiQuery({ name: 'otp', required: false, description: 'One-Time Password' })
+  async verifyEmail(@Query('token') token?: string, @Query('otp') otp?: string): Promise<any> {
+    return this.userService.verifyEmail(token, otp);
+  }
+
+  @Get('medical-practitioners')
+  async getMedicalPractitioners(
+    @Query('languages') languages?: string | string[],
+  ): Promise<User[]> {
+    const languageList = Array.isArray(languages)
+      ? languages
+      : languages
+      ? [languages]
+      : [];
+
+    return this.userService.findAllMedicalPractitioners(languageList);
+  }
+
+  @Get('nearby-specialized')
+  @ApiOperation({ summary: 'Get users with specific roles within a radius' })
+  @ApiQuery({ name: 'lat', type: Number, description: 'Latitude', required: true })
+  @ApiQuery({ name: 'lng', type: Number, description: 'Longitude', required: true })
+  @ApiQuery({ name: 'radius', type: Number, description: 'Radius in kilometers', required: false, example: 50 })
+  @ApiResponse({ status: 200, description: 'List of nearby specialized users', type: [User] })
+  @ApiResponse({ status: 400, description: 'Invalid query parameters' })
+  @ApiResponse({ status: 404, description: 'No users found' })
+  async getNearbySpecializedUsers(
+    @Query('lat') lat: string,
+    @Query('lng') lng: string,
+    @Query('radius') radius: string = '50',
+    @Query('role') role?: string,
+  ) {
+    const latitude = parseFloat(lat);
+    const longitude = parseFloat(lng);
+    const radiusKm = parseFloat(radius);
+  
+    if (
+      isNaN(latitude) ||
+      isNaN(longitude) ||
+      isNaN(radiusKm) ||
+      radiusKm <= 0
+    ) {
+      return {
+        message: 'Invalid lat, lng or radius',
+        statusCode: 400,
+      };
+    }
+  
+    // Map string role to enum (optional filter)
+    let rolesToInclude: UserRole[] = [
+      UserRole.PHAMACY_SERVICES,
+      UserRole.MEDICAL_LAB_SERVICES,
+    ];
+  
+    if (role) {
+      const trimmedRole = role.trim().toLowerCase();
+      if (Object.values(UserRole).includes(trimmedRole as UserRole)) {
+        rolesToInclude = [trimmedRole as UserRole];
+      } else {
+        return {
+          message: `Invalid role. Must be one of: ${Object.values(UserRole).join(', ')}`,
+          statusCode: 400,
+        };
+      }
+     
+    }
+  
+    const users = await this.userService.findNearbySpecializedUsers(
+      latitude,
+      longitude,
+      radiusKm,
+      rolesToInclude,
+    );
+  
+    if (users.length === 0) {
+      return {
+        message: `No ${role} found within ${radiusKm} km `,
+      };
+    }
+  
+    return users;
+  }
+  
+  
+    // @UseGuards(JwtAuthGuard)
+    @Get(':id')
+    // @ApiBearerAuth() 
+    @ApiOperation({ summary: 'Get a user by ID' }) 
+    @ApiParam({ name: 'id', required: true, description: 'User ID' }) 
+    @ApiResponse({ status: 200, description: 'User retrieved successfully', type: User }) 
+    @ApiResponse({ status: 400, description: 'Invalid User ID' }) 
+    @ApiResponse({ status: 401, description: 'Unauthorized' })
+    @ApiResponse({ status: 404, description: 'User not found' }) 
+    async getUser(@Param('id') id: string): Promise<User> {
+      return this.userService.getUserById(id);
+    }
 
   @Post('create')
 @ApiOperation({ summary: 'Create a new user' })
@@ -92,42 +197,26 @@ export class UserController {
 
 
 @Post('create')
-async createUser(
-  @Body() createUserDto: CreateUserDto,
-  @UploadedFiles() files: { 
-    profileImage?: Express.Multer.File[]; 
-    degreeCertificate?: Express.Multer.File[]; 
-    currentPracticeLicense?: Express.Multer.File[];
+  @ApiOperation({ summary: 'Register a new user' })
+  @ApiBody({ type: CreateUserDto })
+  @ApiResponse({
+    status: 201,
+    description: 'User created successfully',
+    schema: {
+      example: {
+        message: 'Account created successfully. Please verify your email.',
+        token: 'your-jwt-token',
+        otp: '123456',
+      },
+    },
+  })
+  @ApiResponse({ status: 400, description: 'Bad request or validation error' })
+  @ApiResponse({ status: 409, description: 'User already exists' })
+  async createUser(@Body() createUserDto: CreateUserDto) {
+    return this.userService.createUser(createUserDto);
   }
-): Promise<{ message: string; token: string; otp: string }> {
-
-  const validatedDto = plainToInstance(CreateUserDto, createUserDto);    
-  const errors = validateSync(validatedDto, { whitelist: true, forbidNonWhitelisted: true });
-
-  if (errors.length > 0) {
-    const formattedErrors = errors.map(error => ({
-      property: error.property,
-      constraints: error.constraints,
-    }));
-
-    throw new BadRequestException({
-      message: 'Invalid input fields',
-      errors: formattedErrors,
-    });
-  }
-  return await this.userService.createUser(files, createUserDto);
-}
-
-  
 
 
-  @Get('verify-email')
-  @ApiOperation({ summary: 'Verify user email' })
-  @ApiQuery({ name: 'token', required: false, description: 'Verification token' })
-  @ApiQuery({ name: 'otp', required: false, description: 'One-Time Password' })
-  async verifyEmail(@Query('token') token?: string, @Query('otp') otp?: string): Promise<any> {
-    return this.userService.verifyEmail(token, otp);
-  }
 
   @Post('login')
   @ApiOperation({ summary: 'User login' })
@@ -155,7 +244,7 @@ async createUser(
     }
 
     if (user.role !== role) {
-      throw new UnauthorizedException(`${email} has no account as a ${role}, Please signup as a ${role}`);
+      throw new UnauthorizedException(`Invalid email or password for selected role`);
     }
 
     const passwordMatch = await bcrypt.compare(password, user.password);
@@ -169,10 +258,26 @@ async createUser(
         { userId: user._id, otp },
         { secret: this.configService.get<string>('JWT_SECRET'), expiresIn: '30m' },
       );
-
-      throw new UnauthorizedException('Account not Verified. A new verification code has been sent to your email.');
+    
+      await this.emailService.sendConfirmationEmail(user.email, user.firstName, otp, otpToken);
+      throw new HttpException(
+        {
+          statusCode: HttpStatus.FORBIDDEN,
+          message: 'Account not verified. A new verification code has been sent to your email.',
+          otpToken,
+        },
+        HttpStatus.FORBIDDEN,
+      );
+      
     }
 
+      // ✅ Set user online and notify others
+      await this.userService.setUserOnlineStatus(user._id, true);
+      this.presenceGateway.server.emit('userStatusChanged', {
+        userId: user._id,
+        isOnline: true,
+      });
+    
     const token = this.jwtService.sign(
       { email: user.email, role: user.role },
       { secret: this.configService.get<string>('JWT_SECRET'), expiresIn: '24h' },
@@ -184,17 +289,59 @@ async createUser(
         id: user._id,
         token,
         isVerified: user.isVerified,
-        dateOfBirth: user.dateOfBirth,
         email: user.email,
-        profileImageUrl: user.profileImage,
         firstName: user.firstName,
         lastName: user.lastName,
+        otherName: user.otherName,
+        username: user.username,
+        phoneNumber: user.phoneNumber,
+        alternatePhoneNumber: user.alternatePhoneNumber,
+        maritalStatus: user.maritalStatus,
+        gender: user.gender,
+        dateOfBirth: user.dateOfBirth,
+        countryOfOrigin: user.countryOfOrigin,
+        stateOfOrigin: user.stateOfOrigin,
+        countryOfResidence: user.countryOfResidence,
+        stateOfResidence: user.stateOfResidence,
+        profilePicture: user.profilePicture,
         role: user.role,
+        status: user.status,
+        bankDetails: user.bankDetails,
+        languageProficiency: user.languageProficiency,
+        specialty: user.specialty,
+        ward: user.ward,
+        localGovernmentArea: user.localGovernmentArea,
+        hospitalName: user.hospitalName,
+        officerInCharge: user.officerInCharge,
+        twoFactorEnabled: user.twoFactorEnabled,
+        degreeCertificate: user.degreeCertificate,
+        currentPracticeLicense: user.currentPracticeLicense,
+        policyAgreement: user.policyAgreement,
+        referralCode: user.referralCode,
+        myReferralCode: user.myReferralCode,
+        referralCount: user.referralCount,
+        isOnline: true,
+        phamacyName: user.pharmacyName,
+        medicalLabName: user.medicalLabName,
+        
+
       },
     };
+    
   }
 
-  @Post('forgot-password')
+
+ 
+  
+  @ApiOperation({ summary: 'Logout user' })
+  @ApiBody({ type: LogoutDto })
+  @ApiResponse({ status: 200, description: 'User logged out successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid user ID' })
+  @Post('logout')
+  async logout(@Body() body: LogoutDto) {
+    return this.userService.logout(body.userId);
+  }
+  @Post('request-password-reset')
   @ApiOperation({ summary: 'Request a password reset' })
   @ApiResponse({ status: 200, description: 'Password reset OTP sent successfully' })
   @ApiBody({
@@ -202,12 +349,15 @@ async createUser(
       type: 'object',
       properties: {
         email: { type: 'string', example: 'admin@example.com' },
+        role: { type: 'string', example: 'client' },
       },
     },
   })
-  async requestPasswordReset(@Body('email') email: string) {
-    return this.userService.requestPasswordReset(email);
-  }
+@HttpCode(HttpStatus.OK)
+async requestReset(@Body() body: { email: string; role: 'client' | 'medical_practitioner' }) {
+  return this.userService.requestPasswordReset(body.email, body.role);
+}
+
 
   @Post('verify-reset-otp')
   @ApiOperation({ summary: 'Verify password reset OTP' })
@@ -216,13 +366,13 @@ async createUser(
     schema: {
       type: 'object',
       properties: {
-        token: { type: 'string', example: 'jwt-token-here' },
+        email: { type: 'string', example: 'email@example.com' },
         otp: { type: 'string', example: '123456' },
       },
     },
   })
-  async verifyResetOtp(@Body('token') token: string, @Body('otp') otp: string) {
-    return this.userService.verifyResetPasswordOtp(token, otp);
+  async verifyResetOtp(@Body('email') email: string, @Body('otp') otp: string) {
+    return this.userService.verifyResetOtp(email, otp);
   }
 
   @Post('reset-password')
@@ -246,16 +396,22 @@ async createUser(
     return this.userService.resetPassword(resetToken, password, confirmPassword);
   }
 
-  @UseGuards(JwtAuthGuard)
-  @Get(':id')
-  @ApiBearerAuth() // Indicates the endpoint requires authentication
-  @ApiOperation({ summary: 'Get a user by ID' }) // Describes the endpoint
-  @ApiParam({ name: 'id', required: true, description: 'User ID' }) // Describes the parameter
-  @ApiResponse({ status: 200, description: 'User retrieved successfully', type: User }) // Success response
-  @ApiResponse({ status: 400, description: 'Invalid User ID' }) // Bad request response
-  @ApiResponse({ status: 401, description: 'Unauthorized' }) // Unauthorized response
-  @ApiResponse({ status: 404, description: 'User not found' }) // Not found response
-  async getUser(@Param('id') id: string): Promise<User> {
-    return this.userService.getUserById(id);
+
+
+
+
+
+  @Patch(':id')
+  @ApiParam({ name: 'id', description: 'User ID' })
+  @ApiBody({ type: UpdateUserDto })
+  @ApiResponse({ status: 200, description: 'User updated', type: User })
+  @ApiResponse({ status: 404, description: 'User not found' })
+  async updateUser(
+    @Param('id') id: string,
+    @Body() updateUserDto: UpdateUserDto,
+  ): Promise<User> {
+    return this.userService.updateUser(id, updateUserDto);
   }
+  
+
 }

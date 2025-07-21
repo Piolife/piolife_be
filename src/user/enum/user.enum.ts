@@ -7,11 +7,12 @@ export enum UserStatus {
   export enum UserRole {
     ADMIN = 'admin',
     USER = 'user',
-    MODERATOR = 'moderator',
     CLIENT = 'client',
     MEDICAL_PRACTITIONER = 'medical_practitioner',
     EMERGENCY_SERVICES = 'emergency_services',
     REAL_ESATE_SERVICES = 'real_estate_services',
     INSURANCE_SERVICES = 'insurance_services',
+    PHAMACY_SERVICES = 'pharmacy_services',
+    MEDICAL_LAB_SERVICES = 'medical_lab_services',
   }
   

@@ -1,4 +1,12 @@
-import { IsEnum, IsOptional, IsString, IsNotEmpty, IsEmail, ValidateIf, IsNumber, } from 'class-validator';
+import {
+  IsEnum,
+  IsOptional,
+  IsString,
+  IsNotEmpty,
+  IsEmail,
+  ValidateIf,
+  IsNumber,
+} from 'class-validator';
 import { UserRole, UserStatus } from '../enum/user.enum';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
@@ -16,148 +24,6 @@ class BankDetailsDto {
   @IsOptional()
   accountNumber: string;
 }
-
-// export class CreateUserDto {
-//   @IsString()
-//   @IsNotEmpty()
-//   firstName: string;
-
-//   @IsString()
-//   @IsNotEmpty()
-//   lastName: string;
-
-//   @IsString()
-//   @IsOptional()
-//   otherName?: string;
-
-//   @IsOptional()
-//   username?: string;
-
-//   @IsString()
-//   @IsEmail({}, { message: 'Invalid email format' })
-//   @IsNotEmpty()
-//   email: string;
-
-//   @IsString()
-//   @IsNotEmpty()
-//   password: string;
-
-//   @IsEnum(UserRole)
-//   @IsNotEmpty()
-//   role: UserRole;
-
-//   @IsEnum(UserStatus)
-//   @IsOptional()
-//   status?: UserStatus;
-
-//   @IsString()
-//   @IsOptional()
-//   gender?: string;
-
-//   @IsString()
-//   @IsOptional()
-//   dateOfBirth?: string;
-
-//   @IsString()
-//   @IsOptional()
-//   profilePicture: string;
-
-//   @IsString()
-//   @IsOptional()
-//   maritalStatus?: string;
-
-//   @IsString()
-//   @IsOptional()
-//   countryOrigin?: string;
-
-//   @IsString()
-//   @IsNotEmpty()
-//   phoneNumber: string;
-
-  
-//   @IsString()
-//   @IsOptional()
-//   stateOfOrigin: string;
-
-
-//   @IsString()
-//   @IsOptional()
-//   countryOfResidence: string;
-
-//   @IsString()
-//   @IsOptional()
-//   stateOfResidence: string;
-
-//   @IsString()
-//   @IsOptional()
-//   profileImage: string;
-
-//   @IsString()
-//   @IsOptional()
-//   degreeCertificate?: string;
-
-//   @IsString()
-//   @IsOptional()
-//   currentPracticeLicense?: string;
-
-//   @IsString()
-//   @IsOptional()
-//   specialty?: Array<string>;
-
-//   @IsString()
-//   @IsOptional()
-//   ward?:string
-
-//   @IsString()
-//   @IsOptional()
-//   localGovernmentArea:string
-//   @IsString()
-//   @IsOptional()
-//   pharmacyName?:string
-
-//   @IsString()
-//   @IsOptional()
-//   medicalLabName?:string
-
-//   @IsString()
-//   @IsOptional()
-//   alternativePhoneNumber?: string;
-
-
-//   @IsOptional()
-//   languageProficiency?: Array<string>;
-
-//   @IsString()
-//   @IsOptional()
-//   policyAgreement?: string;
-
-//   @ValidateIf((dto) => dto.role !== UserRole.CLIENT)
-//   @IsNotEmpty({ message: 'At least one bank detail is required for this role.' })
-//   @IsOptional()
-//   @Type(() => BankDetailsDto)
-//   bankDetails?: BankDetailsDto[];
-
-
-//   @IsString()
-//   @IsOptional()
-//   hospitalName: string;
-
-//   @IsString()
-//   @IsOptional()
-//   countryOfOrigin: string;
-
-//   @IsString()
-//   @IsOptional()
-//   officerInCharge: string;
-//   @IsString()
-// @IsOptional()
-// referralCode?: string;
-
-// @IsString()
-// @IsOptional()
-// myReferralCode?: string;
-
-// }
 
 export class CreateUserDto {
   @ApiProperty()
@@ -304,7 +170,9 @@ export class CreateUserDto {
 
   @ApiPropertyOptional({ type: [BankDetailsDto] })
   @ValidateIf((dto) => dto.role !== UserRole.CLIENT)
-  @IsNotEmpty({ message: 'At least one bank detail is required for this role.' })
+  @IsNotEmpty({
+    message: 'At least one bank detail is required for this role.',
+  })
   @IsOptional()
   @Type(() => BankDetailsDto)
   bankDetails?: BankDetailsDto[];
@@ -334,7 +202,6 @@ export class CreateUserDto {
   @IsOptional()
   myReferralCode?: string;
 
-
   @ApiPropertyOptional()
   @IsNumber()
   @IsOptional()
@@ -346,7 +213,6 @@ export class CreateUserDto {
   longitude: number;
 }
 
-
 export class LoginDto {
   @IsEmail({}, { message: 'Invalid email format' })
   @IsNotEmpty({ message: 'Email is required' })
@@ -357,8 +223,8 @@ export class LoginDto {
   readonly password: string;
 }
 
-export  class LogoutDto {
-    @ApiProperty({ example: 'user_1234567890' })
-    @IsString()
-    userId: string;
-  }
+export class LogoutDto {
+  @ApiProperty({ example: 'user_1234567890' })
+  @IsString()
+  userId: string;
+}

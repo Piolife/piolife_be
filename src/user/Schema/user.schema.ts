@@ -6,18 +6,16 @@ const snowflakeIdGenerator = new SnowflakeIdGenerator();
 
 export type UserDocument = User & Document;
 
-
 class BankDetails {
-    @Prop({ required: true })
-    bankName: string;
-  
-    @Prop({ required: true })
-    accountName: string;
-  
-    @Prop({ required: true })
-    accountNumber: string;
-  }
-  
+  @Prop({ required: true })
+  bankName: string;
+
+  @Prop({ required: true })
+  accountName: string;
+
+  @Prop({ required: true })
+  accountNumber: string;
+}
 
 @Schema({ timestamps: true })
 export class User {
@@ -55,102 +53,103 @@ export class User {
   @Prop()
   maritalStatus: string;
 
-@Prop()
-dateOfBirth: string;
+  @Prop()
+  dateOfBirth: string;
 
-@Prop()
-phoneNumber: string;
+  @Prop()
+  phoneNumber: string;
 
-@Prop()
-countryOfOrigin: string;
+  @Prop()
+  countryOfOrigin: string;
 
-@Prop()
-stateOfOrigin: string;
+  @Prop()
+  stateOfOrigin: string;
 
-@Prop()
-countryOfResidence: string;
-@Prop()
-username : string;
+  @Prop()
+  countryOfResidence: string;
+  @Prop()
+  username: string;
 
-@Prop()
-stateOfResidence: string;
+  @Prop()
+  stateOfResidence: string;
 
-@Prop({ type: String, enum: Object.values(UserStatus), default: UserStatus.ACTIVE })
-status: UserStatus;
+  @Prop({
+    type: String,
+    enum: Object.values(UserStatus),
+    default: UserStatus.ACTIVE,
+  })
+  status: UserStatus;
 
-@Prop({ type: String, enum: Object.values(UserRole), default: UserRole.CLIENT })
-role: UserRole;
+  @Prop({
+    type: String,
+    enum: Object.values(UserRole),
+    default: UserRole.CLIENT,
+  })
+  role: UserRole;
 
+  @Prop({ type: Boolean, default: false })
+  twoFactorEnabled: boolean;
 
-@Prop({ type: Boolean, default: false })
-twoFactorEnabled: boolean;
+  @Prop()
+  degreeCertificate?: string;
 
+  @Prop()
+  currentPracticeLicense?: string;
 
-@Prop()
-degreeCertificate?: string;
+  @Prop({ type: [BankDetails], default: [] })
+  bankDetails?: BankDetails[];
 
-@Prop()
-currentPracticeLicense?: string;
+  @Prop()
+  languageProficiency?: Array<string>;
+  @Prop()
+  specialty?: Array<string>;
 
+  @Prop()
+  hospitalName: string;
 
-@Prop({ type: [BankDetails], default: [] }) 
-bankDetails?: BankDetails[];
+  @Prop()
+  officerInCharge: string;
 
-@Prop()
-languageProficiency?: Array<string>;
-@Prop()
-specialty?: Array<string>;
+  @Prop()
+  alternatePhoneNumber: string;
+  @Prop()
+  pharmacyName: string;
+  @Prop()
+  medicalLabName: string;
 
-@Prop()
-hospitalName: string;
+  @Prop()
+  localGovernmentArea: string;
 
-@Prop()
-officerInCharge: string;
+  @Prop({ type: Boolean, default: false })
+  policyAgreement: boolean;
 
-@Prop()
-alternatePhoneNumber: string;
-@Prop()
-pharmacyName: string;
-@Prop()
-medicalLabName: string;
+  @Prop()
+  ward: string;
 
-@Prop()
-localGovernmentArea: string;
+  @Prop({ unique: true })
+  myReferralCode: string;
 
-@Prop({ type: Boolean, default: false })
-policyAgreement: boolean;
+  @Prop()
+  referralCode?: string;
+  @Prop({ default: 0 })
+  referralCount: number;
 
-@Prop()
-ward: string;
+  @Prop({ default: false })
+  isOnline: boolean;
 
-@Prop({ unique: true }) 
-myReferralCode: string;
+  @Prop()
+  lastSeen?: Date;
 
-@Prop()
-referralCode?: string;
-@Prop({ default: 0 })
-referralCount: number;
+  @Prop()
+  logo?: string;
 
-@Prop({ default: false })
-isOnline: boolean;
+  @Prop()
+  latitude: number;
 
-@Prop()
-lastSeen?: Date;
-
-@Prop()
-logo?: string;
-
-
-@Prop()
-latitude: number;
-
-@Prop()
-longitude: number;
-
+  @Prop()
+  longitude: number;
 }
-
 
 export const UserSchema = SchemaFactory.createForClass(User);
 
 UserSchema.index({ email: 1, role: 1 }, { unique: true });
-

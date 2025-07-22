@@ -16,51 +16,37 @@ import {
   ApiBody,
   ApiParam,
 } from '@nestjs/swagger';
-import { CreatePharmacyStockDto } from './dto/create-pharmacy-stock.dto';
-import { PharmacyStockService } from './pharmacy-stock.service';
-import { PharmacyStock } from './schema/pharmacy-stock.schema';
+import { CreateMedLabStockDto } from './dto/create-medlab-stock.dto';
+import { MedLabStockService } from './medlab-stock.service';
 import { AuthGuard } from '@nestjs/passport';
+import { MedLabStock } from './schema/medlab-stock.schema';
 
 interface RequestWithUser extends Request {
   user: { userId: string; username: string };
 }
-@ApiTags('Pharmacy Stock')
-@Controller('pharmacy-stock')
-export class PharmacyStockController {
-  constructor(private readonly service: PharmacyStockService) {}
-
-  // @Post()
-  // @ApiOperation({ summary: 'Create a new stock item' })
-  // @ApiResponse({ status: 201, description: 'Stock item created successfully.' })
-  // create(@Body() dto: CreatePharmacyStockDto) {
-  //   return this.service.create(dto);
-  // }
+@ApiTags('MedLab Stock')
+@Controller('medlab-stock')
+export class MedLabStockController {
+  constructor(private readonly service: MedLabStockService) {}
 
   @Post()
   @UseGuards(AuthGuard('jwt'))
-  @ApiOperation({ summary: 'Create a new stock item' })
-  @ApiResponse({ status: 201, description: 'Stock item created successfully.' })
+  @ApiOperation({ summary: 'Create a new test' })
+  @ApiResponse({ status: 201, description: 'Test created successfully.' })
   create(
-    @Body() dto: CreatePharmacyStockDto,
+    @Body() dto: CreateMedLabStockDto,
     @Req() req: RequestWithUser, // <- TS now happy
   ) {
     const userId = req.user.userId; // <- matches JwtStrategy
     return this.service.create(dto, userId);
   }
 
-  // @Get()
-  // @ApiOperation({ summary: 'Get all stock items' })
-  // @ApiResponse({ status: 200, description: 'List of all stock items.' })
-  // findAll() {
-  //   return this.service.findAll();
-  // }
-
   @Get()
   @UseGuards(AuthGuard('jwt'))
-  @ApiOperation({ summary: 'Get all stock items for the logged-in user' })
+  @ApiOperation({ summary: 'Get all test for the logged-in user' })
   @ApiResponse({
     status: 200,
-    description: 'List of stock items for the user.',
+    description: 'List of test for the user.',
   })
   findAll(@Req() req: RequestWithUser) {
     const userId = req.user.userId;
@@ -68,7 +54,7 @@ export class PharmacyStockController {
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Get a specific stock item by ID' })
+  @ApiOperation({ summary: 'Get a specific test by ID' })
   @ApiParam({ name: 'id', description: 'Stock item ID' })
   @ApiResponse({ status: 200, description: 'Stock item retrieved.' })
   findOne(@Param('id') id: string) {
@@ -87,20 +73,11 @@ export class PharmacyStockController {
       },
     },
   })
-  @ApiResponse({ status: 200, description: 'Item bought successfully.' })
-  async buyItem(
-    @Param('id') id: string,
-    @Body('quantity') quantity: number,
-    @Body('userId') userId: string,
-  ) {
-    return this.service.buyItem(id, quantity, userId);
-  }
-
   @Patch(':id')
   @ApiOperation({ summary: 'Update stock item' })
   @ApiParam({ name: 'id', description: 'Stock item ID' })
-  @ApiBody({ type: PharmacyStock })
-  updateStock(@Param('id') id: string, @Body() dto: Partial<PharmacyStock>) {
+  @ApiBody({ type: MedLabStock })
+  updateStock(@Param('id') id: string, @Body() dto: Partial<MedLabStock>) {
     return this.service.updateStock(id, dto);
   }
 

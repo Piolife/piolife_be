@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
+import mongoose, { Document } from 'mongoose';
 import { SnowflakeIdGenerator } from 'utils/idGenerator';
 
 const snowflakeIdGenerator = new SnowflakeIdGenerator();
@@ -29,6 +29,9 @@ export class PharmacyStock {
 
   @Prop({ required: true })
   quantity: number;
+
+  @Prop({ type: String, ref: 'User', required: true })
+  user: string;
 
   @Prop({
     type: String,

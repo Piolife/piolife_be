@@ -11,18 +11,18 @@ import { MedicalIssuesModule } from './medical-issues/medical-issues.module';
 import { SessionsModule } from './sessions/sessions.module';
 import { PharmacyStockModule } from './pharmacy-stock/pharmacy-stock.module';
 import { CacheModule } from '@nestjs/cache-manager';
-
+import { MedLabStockModule } from './medLab-stock/medlab-stock.module';
 @Module({
   imports: [
-       CacheModule.register({
-          isGlobal: true, 
-        }),
+    CacheModule.register({
+      isGlobal: true,
+    }),
     ConfigModule.forRoot({
       envFilePath: '.env',
       isGlobal: true,
     }),
     MongooseModule.forRootAsync({
-      useFactory: async () => {
+      useFactory: () => {
         console.log('server connected');
         return {
           uri: process.env.MONGODB_URL,
@@ -36,6 +36,7 @@ import { CacheModule } from '@nestjs/cache-manager';
     MedicalIssuesModule,
     SessionsModule,
     PharmacyStockModule,
+    MedLabStockModule,
   ],
   controllers: [],
   providers: [

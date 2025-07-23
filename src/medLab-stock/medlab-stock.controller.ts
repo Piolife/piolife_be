@@ -61,6 +61,14 @@ export class MedLabStockController {
     return this.service.findOne(id);
   }
 
+  @Patch(':id')
+  @ApiOperation({ summary: 'Update stock item' })
+  @ApiParam({ name: 'id', description: 'Stock item ID' })
+  @ApiBody({ type: MedLabStock })
+  updateStock(@Param('id') id: string, @Body() dto: Partial<MedLabStock>) {
+    return this.service.updateStock(id, dto);
+  }
+
   @Post(':id/buy')
   @ApiOperation({ summary: 'Buy a stock item' })
   @ApiParam({ name: 'id', description: 'Stock item ID' })
@@ -73,13 +81,7 @@ export class MedLabStockController {
       },
     },
   })
-  @Patch(':id')
-  @ApiOperation({ summary: 'Update stock item' })
-  @ApiParam({ name: 'id', description: 'Stock item ID' })
-  @ApiBody({ type: MedLabStock })
-  updateStock(@Param('id') id: string, @Body() dto: Partial<MedLabStock>) {
-    return this.service.updateStock(id, dto);
-  }
+
 
   @Delete(':id')
   @ApiOperation({ summary: 'Delete a stock item' })

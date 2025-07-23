@@ -18,10 +18,10 @@ export class MedLabStockService {
   ) {}
 
   async create(
-    createPharmacyStockDto: CreateMedLabStockDto,
+    CreateMedLabStockDto: CreateMedLabStockDto,
     userId: string,
   ): Promise<MedLabStock> {
-    const { name } = createPharmacyStockDto;
+    const { name } = CreateMedLabStockDto;
 
     const existing = await this.stockModel.findOne({ name, user: userId });
     if (existing) {
@@ -29,7 +29,7 @@ export class MedLabStockService {
     }
 
     const newStock = await this.stockModel.create({
-      ...createPharmacyStockDto,
+      ...CreateMedLabStockDto,
       user: userId,
     });
 

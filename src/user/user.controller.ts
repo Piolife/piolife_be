@@ -352,7 +352,7 @@ export class UserController {
 
     const token = this.jwtService.sign(
       {
-        sub: user._id,
+        user_id: user._id,
         username: user.username,
         email: user.email,
         role: user.role,
@@ -398,7 +398,7 @@ export class UserController {
         currentPracticeLicense: user.currentPracticeLicense,
         policyAgreement: user.policyAgreement,
         referralCode: user.referralCode,
-        myReferralCode: user.myReferralCode,
+      
         referralCount: user.referralCount,
         isOnline: true,
         phamacyName: user.pharmacyName,

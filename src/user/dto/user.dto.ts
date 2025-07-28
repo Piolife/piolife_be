@@ -197,10 +197,6 @@ export class CreateUserDto {
   @IsOptional()
   referralCode?: string;
 
-  @ApiPropertyOptional()
-  @IsString()
-  @IsOptional()
-  myReferralCode?: string;
 
   @ApiPropertyOptional()
   @IsNumber()

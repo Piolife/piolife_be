@@ -126,8 +126,6 @@ export class User {
   @Prop()
   ward: string;
 
-  @Prop({ unique: true })
-  myReferralCode: string;
 
   @Prop()
   referralCode?: string;

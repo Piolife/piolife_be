@@ -7,12 +7,12 @@ export type MedicalIssueDocument = MedicalIssue & Document;
 
 @Schema()
 export class MedicalIssue {
-      @Prop({
-                type: String,
-                default: () => snowflakeIdGenerator.generate(),
-                required: true,
-              })
-              _id: string;
+  @Prop({
+    type: String,
+    default: () => snowflakeIdGenerator.generate(),
+    required: true,
+  })
+  _id: string;
   @Prop({ required: true, unique: true })
   name: string;
 
@@ -25,6 +25,5 @@ export class MedicalIssue {
   @Prop({ required: true })
   price: number;
 }
-
 
 export const MedicalIssueSchema = SchemaFactory.createForClass(MedicalIssue);

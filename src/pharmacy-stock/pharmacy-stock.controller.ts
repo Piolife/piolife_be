@@ -29,31 +29,14 @@ interface RequestWithUser extends Request {
 export class PharmacyStockController {
   constructor(private readonly service: PharmacyStockService) {}
 
-  // @Post()
-  // @ApiOperation({ summary: 'Create a new stock item' })
-  // @ApiResponse({ status: 201, description: 'Stock item created successfully.' })
-  // create(@Body() dto: CreatePharmacyStockDto) {
-  //   return this.service.create(dto);
-  // }
-
   @Post()
   @UseGuards(AuthGuard('jwt'))
   @ApiOperation({ summary: 'Create a new stock item' })
   @ApiResponse({ status: 201, description: 'Stock item created successfully.' })
-  create(
-    @Body() dto: CreatePharmacyStockDto,
-    @Req() req: RequestWithUser, // <- TS now happy
-  ) {
-    const userId = req.user.userId; // <- matches JwtStrategy
+  create(@Body() dto: CreatePharmacyStockDto, @Req() req: RequestWithUser) {
+    const userId = req.user.userId;
     return this.service.create(dto, userId);
   }
-
-  // @Get()
-  // @ApiOperation({ summary: 'Get all stock items' })
-  // @ApiResponse({ status: 200, description: 'List of all stock items.' })
-  // findAll() {
-  //   return this.service.findAll();
-  // }
 
   @Get()
   @UseGuards(AuthGuard('jwt'))

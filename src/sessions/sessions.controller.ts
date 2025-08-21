@@ -1,7 +1,26 @@
-import { Controller, Post, Get, Body, Param, BadRequestException } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Get,
+  Body,
+  Param,
+  BadRequestException,
+  UseGuards,
+} from '@nestjs/common';
 import { SessionsService } from './sessions.service';
-import { BookSessionDto, CreateReviewDto } from './dto/create-session.dto';
-import { ApiTags, ApiOperation, ApiParam, ApiBody, ApiResponse } from '@nestjs/swagger';
+import {
+  BookSessionDto,
+  CreateReviewDto,
+  geoLocationDto,
+} from './dto/create-session.dto';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiParam,
+  ApiBody,
+  ApiResponse,
+} from '@nestjs/swagger';
+import { AuthGuard } from '@nestjs/passport';
 
 @ApiTags('Sessions')
 @Controller('sessions')
@@ -11,28 +30,36 @@ export class SessionsController {
   @Get('pending/:practitionerId')
   @ApiOperation({ summary: 'Get pending sessions for a practitioner' })
   @ApiParam({ name: 'practitionerId', required: true, type: String })
-  @ApiResponse({ status: 200, description: 'Pending sessions retrieved successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'Pending sessions retrieved successfully',
+  })
   async getPendingSessions(@Param('practitionerId') practitionerId: string) {
     return this.service.getPendingSessionsForPractitioner(practitionerId);
   }
 
   @Get('with-review/:sessionId')
-@ApiOperation({ summary: 'Get a session along with its review' })
-@ApiParam({ name: 'sessionId', required: true })
-@ApiResponse({ status: 200, description: 'Session with review fetched successfully' })
-async getSessionWithReview(@Param('sessionId') sessionId: string) {
-  if (!sessionId) {
-    throw new BadRequestException('sessionId is required');
+  @ApiOperation({ summary: 'Get a session along with its review' })
+  @ApiParam({ name: 'sessionId', required: true })
+  @ApiResponse({
+    status: 200,
+    description: 'Session with review fetched successfully',
+  })
+  async getSessionWithReview(@Param('sessionId') sessionId: string) {
+    if (!sessionId) {
+      throw new BadRequestException('sessionId is required');
+    }
+
+    return this.service.getSessionWithReview(sessionId);
   }
-
-  return this.service.getSessionWithReview(sessionId);
-}
-
 
   @Get('history/:userId')
   @ApiOperation({ summary: 'Get all session history for a user' })
   @ApiParam({ name: 'userId', required: true, type: String })
-  @ApiResponse({ status: 200, description: 'User session history retrieved successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'User session history retrieved successfully',
+  })
   async getUserSessionHistory(@Param('userId') userId: string) {
     if (!userId) {
       throw new BadRequestException('userId is required');
@@ -41,10 +68,17 @@ async getSessionWithReview(@Param('sessionId') sessionId: string) {
   }
 
   @Get('history/:practitionerId')
-  @ApiOperation({ summary: 'Get all session history for a medical practitioner' })
+  @ApiOperation({
+    summary: 'Get all session history for a medical practitioner',
+  })
   @ApiParam({ name: 'practitionerId', required: true, type: String })
-  @ApiResponse({ status: 200, description: 'User session history retrieved successfully' })
-  async getPractitionerIdSessionHistory(@Param('practitionerId') practitionerId: string) {
+  @ApiResponse({
+    status: 200,
+    description: 'User session history retrieved successfully',
+  })
+  async getPractitionerIdSessionHistory(
+    @Param('practitionerId') practitionerId: string,
+  ) {
     if (!practitionerId) {
       throw new BadRequestException('userId is required');
     }
@@ -52,7 +86,9 @@ async getSessionWithReview(@Param('sessionId') sessionId: string) {
   }
 
   @Post('practitioners')
-  @ApiOperation({ summary: 'Find matching medical practitioners based on filters' })
+  @ApiOperation({
+    summary: 'Find matching medical practitioners based on filters',
+  })
   @ApiBody({ type: BookSessionDto })
   @ApiResponse({ status: 200, description: 'Matching practitioners returned' })
   async getMatchingPractitioners(@Body() dto: BookSessionDto) {

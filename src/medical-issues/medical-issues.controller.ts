@@ -1,9 +1,16 @@
 // src/medical-issues/medical-issues.controller.ts
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+} from '@nestjs/common';
 import { MedicalIssuesService } from './medical-issues.service';
 import { CreateMedicalIssueDto } from './dto/create-medical-issue.dto';
 import { UpdateMedicalIssueDto } from './dto/update-medical-issue.dto';
-
 
 @Controller('medical-issues')
 export class MedicalIssuesController {
@@ -20,9 +27,9 @@ export class MedicalIssuesController {
   }
 
   @Get(':id')
-findOne(@Param('id') id: string) {
-  return this.service.findOne(id);
-}
+  findOne(@Param('id') id: string) {
+    return this.service.findOne(id);
+  }
 
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateDto: UpdateMedicalIssueDto) {
@@ -33,5 +40,4 @@ findOne(@Param('id') id: string) {
   delete(@Param('id') id: string) {
     return this.service.delete(id);
   }
-
 }

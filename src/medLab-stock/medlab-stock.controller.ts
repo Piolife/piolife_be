@@ -81,8 +81,6 @@ export class MedLabStockController {
       },
     },
   })
-
-
   @Delete(':id')
   @ApiOperation({ summary: 'Delete a stock item' })
   @ApiParam({ name: 'id', description: 'Stock item ID' })

@@ -1,21 +1,31 @@
+/* eslint-disable @typescript-eslint/no-unsafe-return */
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
-import { IsArray, IsDateString, IsIn, IsNotEmpty, IsNumber, IsOptional, IsString, Max, Min } from 'class-validator';
-
-
+import {
+  IsArray,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+  Max,
+  Min,
+} from 'class-validator';
 
 export class BookSessionDto {
   @ApiPropertyOptional({ type: [String], description: 'List of specialty IDs' })
   @IsArray()
   @IsOptional()
-  @Transform(({ value }) => Array.isArray(value) ? value : [value])
+  @Transform(({ value }) => (Array.isArray(value) ? value : [value]))
   @IsString({ each: true })
   specialty?: string[];
 
-  @ApiPropertyOptional({ type: [String], description: 'Languages the user is proficient in' })
+  @ApiPropertyOptional({
+    type: [String],
+    description: 'Languages the user is proficient in',
+  })
   @IsArray()
   @IsOptional()
-  @Transform(({ value }) => Array.isArray(value) ? value : [value])
+  @Transform(({ value }) => (Array.isArray(value) ? value : [value]))
   @IsString({ each: true })
   languageProficiency?: string[];
 
@@ -38,12 +48,13 @@ export class BookSessionDto {
   @IsString()
   userId: string;
 
-  @ApiPropertyOptional({ description: 'ID of the preferred practitioner (optional)' })
+  @ApiPropertyOptional({
+    description: 'ID of the preferred practitioner (optional)',
+  })
   @IsString()
   @IsOptional()
   practitionerId?: string;
 }
-
 
 export class CreateReviewDto {
   @ApiProperty({ description: 'ID of the session being reviewed' })
@@ -68,6 +79,24 @@ export class CreateReviewDto {
   @IsNotEmpty()
   review: string;
 }
+export class geoLocationDto {
+  @ApiProperty({ description: 'Address of caller' })
+  @IsString()
+  @IsNotEmpty()
+  address: string;
 
+  @ApiProperty({ description: 'State of caller' })
+  @IsString()
+  @IsNotEmpty()
+  state: string;
 
+  @ApiProperty({ description: 'lga of caller' })
+  @IsString()
+  @IsNotEmpty()
+  lga: string;
 
+  @ApiProperty({ description: 'ward of caller' })
+  @IsString()
+  @IsNotEmpty()
+  ward: string;
+}

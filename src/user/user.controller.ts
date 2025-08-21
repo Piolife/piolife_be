@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-enum-comparison */
 import {
   ApiTags,
   ApiOperation,
@@ -5,7 +7,6 @@ import {
   ApiBody,
   ApiQuery,
   ApiConsumes,
-  ApiBearerAuth,
   ApiParam,
 } from '@nestjs/swagger';
 import {
@@ -14,18 +15,13 @@ import {
   Get,
   Post,
   Query,
-  BadRequestException,
   UnauthorizedException,
   UsePipes,
   ValidationPipe,
-  UploadedFile,
   UseInterceptors,
-  UploadedFiles,
   Param,
-  UseGuards,
   HttpCode,
   HttpStatus,
-  ForbiddenException,
   HttpException,
   Patch,
 } from '@nestjs/common';
@@ -40,6 +36,7 @@ import { EmailService } from 'src/services/email/email.sevice';
 import { PresenceGateway } from './presence.gateway';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserRole } from './enum/user.enum';
+import { StreamChat } from 'stream-chat';
 
 @ApiTags(' User Auth')
 @Controller('users')
@@ -186,6 +183,13 @@ export class UserController {
   @ApiResponse({ status: 201, description: 'User created successfully' })
   @ApiResponse({ status: 400, description: 'Failed to create user' })
   @ApiConsumes('multipart/form-data')
+  @UseInterceptors(
+    FileFieldsInterceptor([
+      { name: 'profileImage', maxCount: 1 },
+      { name: 'degreeCertificate', maxCount: 1 },
+      { name: 'currentPracticeLicense', maxCount: 1 },
+    ]),
+  )
   @ApiBody({
     schema: {
       type: 'object',
@@ -248,16 +252,6 @@ export class UserController {
       required: ['firstName', 'lastName', 'email', 'password', 'role'],
     },
   })
-  @UseInterceptors(
-    FileFieldsInterceptor([
-      { name: 'profileImage', maxCount: 1 },
-      { name: 'degreeCertificate', maxCount: 1 },
-      { name: 'currentPracticeLicense', maxCount: 1 },
-    ]),
-  )
-  @Post('create')
-  @ApiOperation({ summary: 'Register a new user' })
-  @ApiBody({ type: CreateUserDto })
   @ApiResponse({
     status: 201,
     description: 'User created successfully',
@@ -363,11 +357,18 @@ export class UserController {
       },
     );
 
+    const streamClient = StreamChat.getInstance(
+      this.configService.get<string>('STREAM_API_KEY') || 'fvct7vwrd7ps',
+      this.configService.get<string>('STREAM_API_SECRET') ||
+        'uzd3477hg4w2tmd7qp9zcc5yex9wvg66pambdazuqf9fb5b32szfgrqra7429vst',
+    );
+    const streamToken = streamClient.createToken(user._id);
     return {
       message: 'Login successful',
       user: {
         id: user._id,
         token,
+        streamToken,
         isVerified: user.isVerified,
         email: user.email,
         firstName: user.firstName,
@@ -398,7 +399,6 @@ export class UserController {
         currentPracticeLicense: user.currentPracticeLicense,
         policyAgreement: user.policyAgreement,
         referralCode: user.referralCode,
-      
         referralCount: user.referralCount,
         isOnline: true,
         phamacyName: user.pharmacyName,

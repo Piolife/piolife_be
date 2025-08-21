@@ -1,14 +1,25 @@
-import { BadRequestException, NotFoundException, Injectable, ForbiddenException } from '@nestjs/common';
+/* eslint-disable prettier/prettier */
+import {
+  BadRequestException,
+  NotFoundException,
+  Injectable,
+  ForbiddenException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { TransactionType, Wallet, WalletDocument } from './schema/wallet.schema';
+import {
+  TransactionType,
+  Wallet,
+  WalletDocument,
+} from './schema/wallet.schema';
 import { User, UserDocument } from 'src/user/Schema/user.schema';
 
 @Injectable()
 export class WalletService {
   constructor(
-    @InjectModel(Wallet.name) private readonly walletModel: Model<WalletDocument>,
-    @InjectModel(User.name) private readonly userModel: Model<UserDocument>
+    @InjectModel(Wallet.name)
+    private readonly walletModel: Model<WalletDocument>,
+    @InjectModel(User.name) private readonly userModel: Model<UserDocument>,
   ) {}
 
   async createWallet(userId: string): Promise<WalletDocument> {
@@ -17,11 +28,20 @@ export class WalletService {
       throw new BadRequestException('User already has a wallet.');
     }
 
-    const wallet = new this.walletModel({ userId, balance: 0, transactions: [] });
+    const wallet = new this.walletModel({
+      userId,
+      balance: 0,
+      transactions: [],
+    });
     return await wallet.save();
   }
 
-  async deposit(userId: string, amount: number, reference: string, status: string) {
+  async deposit(
+    userId: string,
+    amount: number,
+    reference: string,
+    status: string,
+  ) {
     const wallet = await this.walletModel.findOne({ userId });
     if (!wallet) {
       throw new NotFoundException('Wallet not found for user.');
@@ -42,7 +62,7 @@ export class WalletService {
         $push: { transactions: depositTransaction },
         $inc: { balance: amount },
       },
-      { new: true, useFindAndModify: false }
+      { new: true, useFindAndModify: false },
     );
 
     if (!updatedWallet) {
@@ -64,25 +84,30 @@ export class WalletService {
     return wallet;
   }
 
-  async getWalletBalance(userId: string): Promise<{ balance: number; loanBalance: number }> {
+  async getWalletBalance(
+    userId: string,
+  ): Promise<{ balance: number; loanBalance: number }> {
     const wallet = await this.walletModel.findOne({ userId });
-  
+
     if (!wallet) {
       throw new NotFoundException('Wallet not found');
     }
-  
+
     // Return both wallet balance and loan balance
     return {
       balance: wallet.balance,
-      loanBalance: wallet.loanBalance || 0, 
+      loanBalance: wallet.loanBalance || 0,
     };
   }
-  
 
   async getWallet(userId: string): Promise<WalletDocument> {
     let wallet = await this.walletModel.findOne({ userId });
     if (!wallet) {
-      wallet = new this.walletModel({ userId, balance: 0, loanEligibility: 20000 });
+      wallet = new this.walletModel({
+        userId,
+        balance: 0,
+        loanEligibility: 20000,
+      });
       await wallet.save();
     }
     return wallet;
@@ -116,7 +141,7 @@ export class WalletService {
   async updateLoanBalance(userId: string, amount: number): Promise<void> {
     const wallet = await this.getWallet(userId);
     wallet.loanBalance += amount;
-    await wallet.save(); 
+    await wallet.save();
   }
 
   async reduceLoanBalance(userId: string, amount: number): Promise<void> {
@@ -124,9 +149,11 @@ export class WalletService {
     wallet.loanBalance = Math.max(wallet.loanBalance - amount, 0);
     await wallet.save();
   }
-  
 
-  async  addTransaction(userId: string, transaction: any): Promise<WalletDocument> {
+  async addTransaction(
+    userId: string,
+    transaction: any,
+  ): Promise<WalletDocument> {
     const wallet = await this.walletModel.findOne({ userId });
     if (!wallet) {
       throw new NotFoundException('Wallet not found for user');
@@ -137,66 +164,121 @@ export class WalletService {
     return wallet;
   }
 
-  async updateLoanEligibility(userId: string, newEligibility: number): Promise<void> {
+  async updateLoanEligibility(
+    userId: string,
+    newEligibility: number,
+  ): Promise<void> {
     await this.walletModel.updateOne(
       { userId },
-      { $set: { loanEligibility: newEligibility } }
+      { $set: { loanEligibility: newEligibility } },
     );
   }
 
-  async credit(userId: string, amount: number, description:string) {
+  async credit(userId: string, amount: number, description: string) {
     const wallet = await this.walletModel.findOne({ userId });
-  
+
     if (!wallet) {
       throw new NotFoundException('Wallet not found');
     }
-  
+
     wallet.balance += amount;
-    wallet.transactions.push({ amount, type: TransactionType.REFERRAL_BONUS, description:`Received ₦${amount}  for referral bonus`, timestamp: new Date() });
+    wallet.transactions.push({
+      amount,
+      type: TransactionType.REFERRAL_BONUS,
+      description: description,
+      timestamp: new Date(),
+    });
     await wallet.save();
   }
-  
+  async debit(userId: string, amount: number, description: string) {
+    const wallet = await this.walletModel.findOne({ userId });
 
-  async transferFunds(userId: string, practitionerId: string, amount: number ) {
+    if (!wallet) {
+      throw new NotFoundException('Wallet not found');
+    }
+
+    let remainingAmount = amount;
+
+    // Deduct from balance first
+    if (wallet.balance >= remainingAmount) {
+      wallet.balance -= remainingAmount;
+      remainingAmount = 0;
+    } else {
+      remainingAmount -= wallet.balance;
+      wallet.balance = 0;
+
+      // Deduct remaining from loan if available
+      if ((wallet.loanBalance || 0) >= remainingAmount) {
+        wallet.loanBalance -= remainingAmount;
+        remainingAmount = 0;
+      }
+    }
+
+    if (remainingAmount > 0) {
+      throw new ForbiddenException('Insufficient balance and loan limit.');
+    }
+
+    wallet.transactions.push({
+      amount,
+      type: TransactionType.EMERGENCY_PAYMENT, // you may want a proper enum type for emergency debit
+      description,
+      timestamp: new Date(),
+    });
+
+    await wallet.save();
+  }
+
+  async transferFunds(userId: string, practitionerId: string, amount: number) {
     const userWallet = await this.walletModel.findOne({ userId });
-    const practitionerWallet = await this.walletModel.findOne({ userId: practitionerId });
-  
+    const practitionerWallet = await this.walletModel.findOne({
+      userId: practitionerId,
+    });
+
     if (!userWallet || userWallet.balance < amount) {
       throw new ForbiddenException("Insufficient balance in user's wallet");
     }
-  
+
     if (!practitionerWallet) {
       throw new NotFoundException("Practitioner's wallet not found");
     }
-  
+
     userWallet.balance -= amount;
     practitionerWallet.balance += amount;
 
-    userWallet.transactions.push({ amount, type: TransactionType.CONSULTATION_PAYMENT,   description: `Paid ₦${amount} for medical consultation`, timestamp: new Date() });
-    practitionerWallet.transactions.push({ amount, type: TransactionType.CONSULTATION_FEE,  description: `Received ₦${amount} for consultation}`, timestamp: new Date() });
+    userWallet.transactions.push({
+      amount,
+      type: TransactionType.CONSULTATION_PAYMENT,
+      description: `Paid ₦${amount} for medical consultation`,
+      timestamp: new Date(),
+    });
+    practitionerWallet.transactions.push({
+      amount,
+      type: TransactionType.CONSULTATION_FEE,
+      description: `Received ₦${amount} for consultation}`,
+      timestamp: new Date(),
+    });
     await userWallet.save();
     await practitionerWallet.save();
   }
-  
 
+  async getTransactionHistorys(userId: string): Promise<{
+    userId: string;
+    balance: number;
+    transactions: Array<{ amount: number; type: string; timestamp: Date }>;
+  }> {
+    const wallet = await this.walletModel.findOne({ userId }).lean();
 
-async getTransactionHistorys(userId: string): Promise<{ userId: string; balance: number; transactions: Array<{ amount: number; type: string; timestamp: Date }> }> {
-  const wallet = await this.walletModel.findOne({ userId }).lean();
+    if (!wallet) {
+      throw new NotFoundException('Wallet not found for user');
+    }
 
-  if (!wallet) {
-    throw new NotFoundException('Wallet not found for user');
+    return {
+      userId: wallet.userId,
+      balance: wallet.balance,
+      transactions: (wallet.transactions || []).map((transaction) => ({
+        ...transaction,
+        timestamp: transaction.timestamp || new Date(),
+      })),
+    };
   }
-
-  return {
-    userId: wallet.userId,
-    balance: wallet.balance,
-    transactions: (wallet.transactions || []).map(transaction => ({
-      ...transaction,
-      timestamp: transaction.timestamp || new Date(),
-    })),
-  };
-}
-
-  
-  
 }

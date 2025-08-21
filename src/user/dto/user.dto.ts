@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import {
   IsEnum,
   IsOptional,
@@ -196,7 +197,6 @@ export class CreateUserDto {
   @IsString()
   @IsOptional()
   referralCode?: string;
-
 
   @ApiPropertyOptional()
   @IsNumber()

@@ -36,21 +36,23 @@ export class Session {
   @Prop()
   gender: string;
 
-  @Prop({ default: 'pending', enum: ['pending', 'in-progress', 'completed', 'cancelled'] })
+  @Prop({
+    default: 'pending',
+    enum: ['pending', 'in-progress', 'completed', 'cancelled'],
+  })
   status: string;
 
   @Prop()
-review?: string;
+  review?: string;
 
-@Prop()
-rating?: number;
+  @Prop()
+  rating?: number;
 
-@Prop({ default: false })
-reviewSubmitted: boolean;
+  @Prop({ default: false })
+  reviewSubmitted: boolean;
 
-@Prop()
-createdAt?: number;
-
+  @Prop()
+  createdAt?: number;
 }
 
 export const SessionSchema = SchemaFactory.createForClass(Session);

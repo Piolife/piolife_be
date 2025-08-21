@@ -11,26 +11,25 @@ import { WalletModule } from 'src/wallet/wallet.module';
 import { PresenceGateway } from './presence.gateway';
 import { CacheModule } from '@nestjs/cache-manager';
 
-
-
 @Module({
   imports: [
     CacheModule.register({
-      isGlobal: true, 
+      isGlobal: true,
     }),
-      forwardRef(() => WalletModule),
+    forwardRef(() => WalletModule),
     MongooseModule.forFeature([{ name: 'User', schema: UserSchema }]),
     MongooseModule.forFeature([{ name: 'Wallet', schema: WalletSchema }]),
     CloudinaryModule,
     WalletModule,
     EmailModule,
     JwtModule.register({
-      secret: "uzd3477hg4w2tmd7qp9zcc5yex9wvg66pambdazuqf9fb5b32szfgrqra7429vst",
+      secret:
+        'uzd3477hg4w2tmd7qp9zcc5yex9wvg66pambdazuqf9fb5b32szfgrqra7429vst',
       signOptions: { expiresIn: '1h' },
     }),
   ],
   controllers: [UserController],
-  providers: [PresenceGateway,UserService],
+  providers: [PresenceGateway, UserService],
   exports: [UserService],
 })
 export class UserModule {}

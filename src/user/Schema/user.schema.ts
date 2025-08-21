@@ -101,6 +101,7 @@ export class User {
 
   @Prop()
   languageProficiency?: Array<string>;
+
   @Prop()
   specialty?: Array<string>;
 
@@ -125,7 +126,6 @@ export class User {
 
   @Prop()
   ward: string;
-
 
   @Prop()
   referralCode?: string;

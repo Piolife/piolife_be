@@ -24,17 +24,6 @@ export class PharmacyStockService {
     @InjectModel(Wallet.name) private walletModel: Model<WalletDocument>,
   ) {}
 
-  // async create(createPharmacyStockDto: CreatePharmacyStockDto): Promise<PharmacyStock> {
-  //   const { name } = createPharmacyStockDto;
-
-  //   const existing = await this.stockModel.findOne({ name });
-  //   if (existing) {
-  //     throw new BadRequestException(`A Pharmacy stock with the name: ${name} already exists`);
-  //   }
-
-  //   const createdIssue = new this.stockModel(createPharmacyStockDto);
-  //   return createdIssue.save();
-  // }
   async create(
     createPharmacyStockDto: CreatePharmacyStockDto,
     userId: string,
@@ -56,9 +45,6 @@ export class PharmacyStockService {
     return newStock;
   }
 
-  // async findAll(): Promise<PharmacyStock[]> {
-  //   return this.stockModel.find().sort({ _id: -1 }).exec();
-  // }
   async findAll(userId: string): Promise<PharmacyStock[]> {
     return this.stockModel.find({ user: userId });
   }

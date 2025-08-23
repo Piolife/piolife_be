@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-enum-comparison */
 import {
@@ -37,6 +38,14 @@ import { PresenceGateway } from './presence.gateway';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserRole } from './enum/user.enum';
 import { StreamChat } from 'stream-chat';
+
+// role.type.ts
+export type Role =
+  | 'client'
+  | 'medical_practitioner'
+  | 'emergency_services'
+  | 'real_estate_services'
+  | 'insurance_services';
 
 @ApiTags(' User Auth')
 @Controller('users')
@@ -291,7 +300,10 @@ export class UserController {
     const email = loginDto.email.trim();
     const password = loginDto.password;
     const role = loginDto.role;
-    const user = await this.userService.findUserByEmail(email);
+    const user = await this.userService.findUserByEmail(
+      email,
+      role as UserRole,
+    );
 
     if (!user) {
       throw new UnauthorizedException(
@@ -446,11 +458,16 @@ export class UserController {
       properties: {
         email: { type: 'string', example: 'email@example.com' },
         otp: { type: 'string', example: '123456' },
+        role: { type: 'string', example: '123456' },
       },
     },
   })
-  async verifyResetOtp(@Body('email') email: string, @Body('otp') otp: string) {
-    return this.userService.verifyResetOtp(email, otp);
+  async verifyResetOtp(
+    @Body('email') email: string,
+    @Body('otp') otp: string,
+    @Body('role') role: Role,
+  ) {
+    return this.userService.verifyResetOtp(email, otp, role);
   }
 
   @Post('reset-password')

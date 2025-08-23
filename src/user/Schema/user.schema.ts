@@ -32,7 +32,7 @@ export class User {
   @Prop()
   lastName: string;
 
-  @Prop({ required: true, unique: false })
+  @Prop({ required: true, unique: false, lowercase: true, trim: true })
   email: string;
 
   @Prop()

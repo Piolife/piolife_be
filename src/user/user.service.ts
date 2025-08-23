@@ -386,13 +386,29 @@ export class UserService {
     }
   }
 
-  async findUserByEmail(email: string): Promise<User> {
+  // async findUserByEmail(email: string): Promise<User> {
+  //   const user = await this.userModel
+  //     .findOne({ email: { $regex: new RegExp(`^${email}$`, 'i') } })
+  //     .exec();
+  //   if (!user) {
+  //     throw new NotFoundException(`User with email ${email} not found`);
+  //   }
+  //   return user;
+  // }
+  async findUserByEmail(email: string, role: UserRole): Promise<User> {
     const user = await this.userModel
-      .findOne({ email: { $regex: new RegExp(`^${email}$`, 'i') } })
+      .findOne({
+        email: { $regex: new RegExp(`^${email}$`, 'i') },
+        role,
+      })
       .exec();
+
     if (!user) {
-      throw new NotFoundException(`User with email ${email} not found`);
+      throw new NotFoundException(
+        `User with email ${email} and role ${role} not found`,
+      );
     }
+
     return user;
   }
 
@@ -464,12 +480,52 @@ export class UserService {
     return { message: 'OTP sent to your email address' };
   }
 
-  async verifyResetOtp(email: string, otp: string): Promise<{ token: string }> {
+  // async verifyResetOtp(email: string, otp: string): Promise<{ token: string }> {
+  //   const user = await this.userModel.findOne({
+  //     email: { $regex: new RegExp(`^${email}$`, 'i') },
+  //   });
+
+  //   if (!user) throw new NotFoundException('User not found');
+
+  //   const storedOtpHash = await (this.cacheManager as any).get(
+  //     `otp:${user._id}`,
+  //   );
+  //   if (!storedOtpHash) throw new BadRequestException('OTP expired or invalid');
+
+  //   const isValid = await bcrypt.compare(otp, storedOtpHash);
+  //   if (!isValid) throw new BadRequestException('Incorrect OTP');
+
+  //   // Remove used OTP
+  //   await (this.cacheManager as any).del(`otp:${user._id}`);
+
+  //   // Issue short-lived token (e.g., 15 mins) to reset password
+  //   const token = this.jwtService.sign(
+  //     { userId: user._id },
+  //     { expiresIn: '15m' },
+  //   );
+
+  //   return { token };
+  // }
+  async verifyResetOtp(
+    email: string,
+    otp: string,
+    role:
+      | 'client'
+      | 'medical_practitioner'
+      | 'emergency_services'
+      | 'real_estate_services'
+      | 'insurance_services',
+  ): Promise<{ token: string }> {
+    if (!role) {
+      throw new BadRequestException('Role is required');
+    }
+
     const user = await this.userModel.findOne({
-      email: { $regex: new RegExp(`^${email}$`, 'i') },
+      email: email.toLowerCase(), // assumes you store lowercase emails
+      role,
     });
 
-    if (!user) throw new NotFoundException('User not found');
+    if (!user) throw new NotFoundException('User not found with this role');
 
     const storedOtpHash = await (this.cacheManager as any).get(
       `otp:${user._id}`,
@@ -482,9 +538,9 @@ export class UserService {
     // Remove used OTP
     await (this.cacheManager as any).del(`otp:${user._id}`);
 
-    // Issue short-lived token (e.g., 15 mins) to reset password
+    // Issue short-lived token (purpose claim is safer!)
     const token = this.jwtService.sign(
-      { userId: user._id },
+      { userId: user._id, role, purpose: 'reset_password' },
       { expiresIn: '15m' },
     );
 

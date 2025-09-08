@@ -7,13 +7,12 @@ export type LoanDocument = Loan & Document;
 
 @Schema({ timestamps: true })
 export class Loan {
-
-        @Prop({
-            type: String,
-            default: () => snowflakeIdGenerator.generate(),
-            required: true,
-          })
-          _id: string;
+  @Prop({
+    type: String,
+    default: () => snowflakeIdGenerator.generate(),
+    required: true,
+  })
+  _id: string;
   @Prop({ required: true })
   userId: string;
 
@@ -27,14 +26,13 @@ export class Loan {
   dueDate: Date;
 
   @Prop()
-interest: number;
-
-@Prop()
-totalRepayableAmount: number;
-
+  interest: number;
 
   @Prop()
-  createdAt:Date
+  totalRepayableAmount: number;
+
+  @Prop()
+  createdAt: Date;
 }
 
 export const LoanSchema = SchemaFactory.createForClass(Loan);

@@ -20,6 +20,7 @@ import { CreateMedLabStockDto } from './dto/create-medlab-stock.dto';
 import { MedLabStockService } from './medlab-stock.service';
 import { AuthGuard } from '@nestjs/passport';
 import { MedLabStock } from './schema/medlab-stock.schema';
+import { CreateLabOrderDto } from './dto/laborder.dto';
 
 interface RequestWithUser extends Request {
   user: { userId: string; username: string };
@@ -86,5 +87,32 @@ export class MedLabStockController {
   @ApiParam({ name: 'id', description: 'Stock item ID' })
   delete(@Param('id') id: string) {
     return this.service.delete(id);
+  }
+
+  @Get('user/:userId')
+  @ApiOperation({ summary: 'Get all stocks for a particular user by userId' })
+  async findByUser(@Param('userId') userId: string) {
+    return this.service.findByUser(userId);
+  }
+
+  @Post('orders')
+  @UseGuards(AuthGuard('jwt'))
+  @ApiOperation({
+    summary: 'Create a new lab order (debit user, credit MedLab)',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Lab order created successfully.',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Validation or insufficient funds.',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'User, MedLab, or tests not found.',
+  })
+  async createLabOrder(@Body() dto: CreateLabOrderDto) {
+    return this.service.createLabOrder(dto);
   }
 }

@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import {
   Controller,
   Post,
@@ -6,12 +7,14 @@ import {
   Param,
   BadRequestException,
   UseGuards,
+  Req,
 } from '@nestjs/common';
 import { SessionsService } from './sessions.service';
 import {
   BookSessionDto,
+  CreateConsultationDto,
+  CreatePrescriptionDto,
   CreateReviewDto,
-  geoLocationDto,
 } from './dto/create-session.dto';
 import {
   ApiTags,
@@ -22,6 +25,9 @@ import {
 } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 
+interface RequestWithUser extends Request {
+  user: { userId: string; username: string };
+}
 @ApiTags('Sessions')
 @Controller('sessions')
 export class SessionsController {
@@ -113,5 +119,108 @@ export class SessionsController {
       throw new BadRequestException('practitionerId is required');
     }
     return this.service.submitReview(dto, practitionerId);
+  }
+
+  @Post('consultations')
+  @UseGuards(AuthGuard('jwt'))
+  @ApiOperation({
+    summary: 'Create a new consultation between user and practitioner',
+  })
+  @ApiBody({ type: CreateConsultationDto })
+  @ApiResponse({
+    status: 201,
+    description: 'Consultation created successfully',
+  })
+  async createConsultation(
+    @Body() dto: CreateConsultationDto,
+    @Req() req: RequestWithUser,
+  ) {
+    const { practitionerId } = dto;
+    const userId = req.user.userId;
+    if (!userId || !practitionerId) {
+      throw new BadRequestException('userId and practitionerId are required');
+    }
+
+    return this.service.create(dto, userId);
+  }
+
+  @Get('consultations/user/:userId')
+  @ApiOperation({ summary: 'Get all consultations for a user' })
+  @ApiParam({ name: 'userId', required: true, type: String })
+  @ApiResponse({
+    status: 200,
+    description: 'Consultations for user retrieved successfully',
+  })
+  async getConsultationsByUser(@Param('userId') userId: string) {
+    if (!userId) {
+      throw new BadRequestException('userId is required');
+    }
+    return this.service.getConsultationsByUser(userId);
+  }
+
+  @Get('consultations/practitioner/:practitionerId')
+  @ApiOperation({ summary: 'Get all consultations for a practitioner' })
+  @ApiParam({ name: 'practitionerId', required: true, type: String })
+  @ApiResponse({
+    status: 200,
+    description: 'Consultations for practitioner retrieved successfully',
+  })
+  async getConsultationsByPractitioner(
+    @Param('practitionerId') practitionerId: string,
+  ) {
+    if (!practitionerId) {
+      throw new BadRequestException('practitionerId is required');
+    }
+    return this.service.getConsultationsByPractitioner(practitionerId);
+  }
+
+  @Post('prescriptions')
+  @ApiOperation({ summary: 'Create a new prescription' })
+  @ApiBody({ type: CreatePrescriptionDto })
+  @ApiResponse({
+    status: 201,
+    description: 'Prescription created successfully',
+  })
+  async createPrescription(
+    @Body() dto: CreatePrescriptionDto,
+    @Req() req: RequestWithUser,
+  ) {
+    const { userId } = dto;
+    const practitionerId = req.user.userId;
+    if (!userId || !practitionerId) {
+      throw new BadRequestException('userId and practitionerId are required');
+    }
+
+    return this.service.createPrescription(dto);
+  }
+
+  @Get('prescriptions/user/:userId')
+  @ApiOperation({ summary: 'Get all prescriptions for a user' })
+  @ApiParam({ name: 'userId', required: true, type: String })
+  @ApiResponse({
+    status: 200,
+    description: 'Prescriptions for user retrieved successfully',
+  })
+  async getPrescriptionsByUser(@Param('userId') userId: string) {
+    if (!userId) {
+      throw new BadRequestException('userId is required');
+    }
+    return this.service.getPrescriptionsByUser(userId);
+  }
+
+  @Get('prescriptions/practitioner/:practitionerId')
+  @ApiOperation({ summary: 'Get all prescriptions for a practitioner' })
+  @ApiParam({ name: 'practitionerId', required: true, type: String })
+  @ApiResponse({
+    status: 200,
+    description: 'Prescriptions for practitioner retrieved successfully',
+  })
+  async getPrescriptionsByPractitioner(
+    @Param('practitionerId') practitionerId: string,
+  ) {
+    if (!practitionerId) {
+      throw new BadRequestException('practitionerId is required');
+    }
+    return this.service.getPrescriptionsByPractitioner(practitionerId);
   }
 }

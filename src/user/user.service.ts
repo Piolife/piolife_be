@@ -191,6 +191,8 @@ export class UserService {
           'latitude',
           'longitude',
           'bankDetails',
+          // 'firstName',
+          // 'lastName',
         ],
       },
     };

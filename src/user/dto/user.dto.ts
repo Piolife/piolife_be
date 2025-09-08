@@ -207,6 +207,11 @@ export class CreateUserDto {
   @IsNumber()
   @IsOptional()
   longitude: number;
+
+  @ApiPropertyOptional({ example: 0 })
+  @IsNumber()
+  @IsOptional()
+  consultationCount?: number;
 }
 
 export class LoginDto {

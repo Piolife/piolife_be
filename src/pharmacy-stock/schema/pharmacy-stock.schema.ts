@@ -6,7 +6,7 @@ const snowflakeIdGenerator = new SnowflakeIdGenerator();
 
 export type PharmacyStockDocument = PharmacyStock & Document;
 
-@Schema()
+@Schema({ timestamps: true })
 export class PharmacyStock {
   @Prop({
     type: String,

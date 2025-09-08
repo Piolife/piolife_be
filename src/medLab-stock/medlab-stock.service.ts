@@ -7,7 +7,14 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { CreateMedLabStockDto } from './dto/create-medlab-stock.dto';
 import { MedLabStock, MedLabStockDocument } from './schema/medlab-stock.schema';
-import { Wallet, WalletDocument } from 'src/wallet/schema/wallet.schema';
+import {
+  TransactionType,
+  Wallet,
+  WalletDocument,
+} from 'src/wallet/schema/wallet.schema';
+import { CreateLabOrderDto } from './dto/laborder.dto';
+import { WalletService } from 'src/wallet/wallet.service';
+import { MedLabOrder, MedLabOrderDocument } from './schema/laborder.schema';
 
 @Injectable()
 export class MedLabStockService {
@@ -15,6 +22,9 @@ export class MedLabStockService {
     @InjectModel(MedLabStock.name)
     private stockModel: Model<MedLabStockDocument>,
     @InjectModel(Wallet.name) private walletModel: Model<WalletDocument>,
+    private readonly walletService: WalletService,
+    @InjectModel(MedLabOrder.name)
+    private readonly labOrderModel: Model<MedLabOrderDocument>,
   ) {}
 
   async create(
@@ -22,8 +32,11 @@ export class MedLabStockService {
     userId: string,
   ): Promise<MedLabStock> {
     const { name } = CreateMedLabStockDto;
-
-    const existing = await this.stockModel.findOne({ name, user: userId });
+    const normalizedName = name.trim().toLowerCase();
+    const existing = await this.stockModel.findOne({
+      name: normalizedName,
+      user: userId,
+    });
     if (existing) {
       throw new BadRequestException(`"${name}" already exists for this user.`);
     }
@@ -36,54 +49,9 @@ export class MedLabStockService {
     return newStock;
   }
 
-  // async findAll(): Promise<PharmacyStock[]> {
-  //   return this.stockModel.find().sort({ _id: -1 }).exec();
-  // }
   async findAll(userId: string): Promise<MedLabStock[]> {
     return this.stockModel.find({ user: userId });
   }
-
-  // async buyItem(stockId: string, quantity: number, userId: string) {
-  //   const item = await this.stockModel.findById(stockId);
-  //   if (!item) throw new NotFoundException('Stock item not found');
-
-  //   if (item.quantity < quantity) {
-  //     throw new BadRequestException('Not enough stock available');
-  //   }
-
-  //   const totalPrice = item.price * quantity;
-
-  //   const wallet = await this.walletModel.findOne({ userId });
-  //   if (!wallet) throw new NotFoundException('Wallet not found');
-
-  //   if (wallet.balance < totalPrice) {
-  //     throw new BadRequestException('Insufficient wallet balance');
-  //   }
-
-  //   // Deduct wallet balance
-  //   wallet.balance -= totalPrice;
-  //   // Add transaction log
-  //   wallet.transactions.push({
-  //     amount: totalPrice,
-  //     type: TransactionType.STOCK_PURCHASE,
-  //     description: `Purchased ${quantity} unit${quantity > 1 ? 's' : ''} of ${item.name}`,
-  //     timestamp: new Date(),
-  //   });
-
-  //   // Update stock
-  //   item.quantity -= quantity;
-  //   item.status = item.quantity === 0 ? 'OUT_OF_STOCK' : 'AVAILABLE';
-
-  //   await Promise.all([wallet.save(), item.save()]);
-
-  //   return {
-  //     message: 'Purchase successful',
-  //     itemName: item.name,
-  //     quantityBought: quantity,
-  //     totalAmountCharged: totalPrice,
-  //     remainingWalletBalance: wallet.balance,
-  //   };
-  // }
 
   async findOne(id: string): Promise<MedLabStock> {
     const issue = await this.stockModel.findById(id);
@@ -92,8 +60,6 @@ export class MedLabStockService {
     }
     return issue;
   }
-
-  // pharmacy.service.ts
 
   async updateStock(id: string, updateDto: Partial<MedLabStock>) {
     const stock = await this.stockModel.findById(id);
@@ -110,5 +76,105 @@ export class MedLabStockService {
       throw new NotFoundException('Test not found');
     }
     return { message: 'test deleted successfully' };
+  }
+
+  async findByUser(userId: string): Promise<MedLabStock[]> {
+    const stocks = await this.stockModel.find({ user: userId });
+    if (!stocks || stocks.length === 0) {
+      throw new NotFoundException(`No stock found for user ${userId}`);
+    }
+    return stocks;
+  }
+
+  async createLabOrder(
+    createLabOrderDto: CreateLabOrderDto,
+  ): Promise<MedLabOrderDocument> {
+    const { userId, medLabId, testIds } = createLabOrderDto;
+
+    if (!userId || !medLabId || !testIds.length) {
+      throw new BadRequestException(
+        'userId, medLabId, and testIds are required.',
+      );
+    }
+
+    // 1. Fetch all tests
+    const tests = await this.stockModel.find({
+      _id: { $in: testIds },
+      user: medLabId,
+    });
+
+    if (!tests.length) {
+      throw new NotFoundException('No valid lab tests found.');
+    }
+
+    // 2. Calculate total cost
+    const totalPrice = tests.reduce((sum, t) => sum + t.price, 0);
+
+    // 3. Get wallets
+    const userWallet = await this.walletService.getWalletByUserId(userId);
+    const medLabWallet = await this.walletService.getWalletByUserId(medLabId);
+
+    if (!userWallet || !medLabWallet) {
+      throw new NotFoundException('User or MedLab wallet not found.');
+    }
+
+    // 4. Check balance + loanBalance
+    const availableFunds = userWallet.balance + userWallet.loanBalance;
+    if (availableFunds < totalPrice) {
+      throw new BadRequestException(
+        'Insufficient funds (including loan balance).',
+      );
+    }
+
+    // 5. Debit user wallet
+    let remainingDebit = totalPrice;
+
+    if (userWallet.balance >= remainingDebit) {
+      userWallet.balance -= remainingDebit;
+      remainingDebit = 0;
+    } else {
+      remainingDebit -= userWallet.balance;
+      userWallet.balance = 0;
+
+      if (userWallet.loanBalance < remainingDebit) {
+        throw new BadRequestException('Insufficient loan balance.');
+      }
+
+      userWallet.loanBalance -= remainingDebit;
+      remainingDebit = 0;
+    }
+
+    userWallet.transactions.push({
+      amount: totalPrice,
+      type: TransactionType.LAB_TEST_PAYMENT,
+      reason: 'Lab test purchase',
+      description: `Paid for lab tests: ${tests.map((t) => t.name).join(', ')}`,
+      timestamp: new Date(),
+    });
+
+    await userWallet.save();
+
+    // 6. Credit MedLab wallet
+    medLabWallet.balance += totalPrice;
+    medLabWallet.transactions.push({
+      amount: totalPrice,
+      type: TransactionType.LAB_TEST_REVENUE,
+      reason: 'Lab test fee received',
+      description: `Received payment from user: ${userId}`,
+      timestamp: new Date(),
+    });
+
+    await medLabWallet.save();
+
+    // 7. Save order
+    const labOrder = await this.labOrderModel.create({
+      userId,
+      medLabId,
+      testIds,
+      totalAmount: totalPrice,
+      status: 'completed',
+    });
+
+    return labOrder;
   }
 }

@@ -17,6 +17,8 @@ export enum TransactionType {
   LOAN_DISBURSEMENT = 'loan_disbursement',
   LOAN_REPAYMENT = 'loan_repayment',
   STOCK_PURCHASE = 'stock_purchase',
+  LAB_TEST_PAYMENT = 'LAB_TEST_PAYMENT',
+  LAB_TEST_REVENUE = 'LAB_TEST_REVENUE',
 }
 
 interface Transaction {

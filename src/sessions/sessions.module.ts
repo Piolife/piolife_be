@@ -13,6 +13,11 @@ import {
 import { Wallet, WalletSchema } from 'src/wallet/schema/wallet.schema';
 import { Review, ReviewSchema } from './schema/review.schema';
 import { Session, SessionSchema } from './schema/session.schema';
+import {
+  Consultations,
+  ConsultationsSchema,
+} from './schema/consultations.schema';
+import { Prescription, PrescriptionSchema } from './schema/prescription.schema';
 
 @Module({
   imports: [
@@ -22,6 +27,8 @@ import { Session, SessionSchema } from './schema/session.schema';
       { name: MedicalIssue.name, schema: MedicalIssueSchema },
       { name: Wallet.name, schema: WalletSchema },
       { name: Review.name, schema: ReviewSchema },
+      { name: Consultations.name, schema: ConsultationsSchema },
+      { name: Prescription.name, schema: PrescriptionSchema },
     ]),
     WalletModule,
   ],

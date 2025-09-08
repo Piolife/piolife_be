@@ -100,3 +100,56 @@ export class geoLocationDto {
   @IsNotEmpty()
   ward: string;
 }
+
+export class CreateConsultationDto {
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
+  practitionerId: string;
+
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
+  medicalIssueId: string;
+
+  @ApiPropertyOptional({ example: 'pending' })
+  @IsString()
+  @IsOptional()
+  status?: string;
+}
+
+export class CreatePrescriptionDto {
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
+  userId: string;
+
+  @IsString()
+  @IsNotEmpty()
+  practitionerId: string;
+
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
+  medicalIssueId: string;
+
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
+  complain: string;
+
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
+  prescription: string;
+
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
+  advice: string;
+
+  @ApiProperty()
+  @IsString()
+  @IsOptional()
+  referral?: string;
+}

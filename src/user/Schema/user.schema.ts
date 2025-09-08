@@ -147,6 +147,9 @@ export class User {
 
   @Prop()
   longitude: number;
+
+  @Prop({ type: Number, default: 0 })
+  consultationCount: number;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

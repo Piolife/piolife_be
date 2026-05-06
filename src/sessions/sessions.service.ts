@@ -444,11 +444,9 @@ export class SessionsService {
     }
 
     // 3. Check user’s balance + loanBalance
-    const availableFunds = userWallet.balance + userWallet.loanBalance;
+    const availableFunds = userWallet.balance;
     if (availableFunds < medicalIssue.price) {
-      throw new BadRequestException(
-        'Insufficient balance (including loan balance).',
-      );
+      throw new BadRequestException('Insufficient balance ');
     }
 
     // 4. Debit from user wallet
@@ -457,16 +455,6 @@ export class SessionsService {
     if (userWallet.balance >= remainingDebit) {
       // fully deduct from balance
       userWallet.balance -= remainingDebit;
-      remainingDebit = 0;
-    } else {
-      // empty balance first, then use loanBalance
-      remainingDebit -= userWallet.balance;
-      userWallet.balance = 0;
-
-      if (userWallet.loanBalance < remainingDebit) {
-        throw new BadRequestException('Insufficient funds in loan balance.');
-      }
-      userWallet.loanBalance -= remainingDebit;
       remainingDebit = 0;
     }
 

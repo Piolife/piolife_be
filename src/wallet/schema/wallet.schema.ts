@@ -19,6 +19,7 @@ export enum TransactionType {
   STOCK_PURCHASE = 'stock_purchase',
   LAB_TEST_PAYMENT = 'LAB_TEST_PAYMENT',
   LAB_TEST_REVENUE = 'LAB_TEST_REVENUE',
+  STOCK_SALE = 'STOCK_SALE',
 }
 
 interface Transaction {

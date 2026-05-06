@@ -20,6 +20,7 @@ import { CreatePharmacyStockDto } from './dto/create-pharmacy-stock.dto';
 import { PharmacyStockService } from './pharmacy-stock.service';
 import { PharmacyStock } from './schema/pharmacy-stock.schema';
 import { AuthGuard } from '@nestjs/passport';
+import { BuyItemDto } from './dto/buy-drug.dto';
 
 interface RequestWithUser extends Request {
   user: { userId: string; username: string };
@@ -58,25 +59,14 @@ export class PharmacyStockController {
     return this.service.findOne(id);
   }
 
-  @Post(':id/buy')
+  @Post('buy')
+  @UseGuards(AuthGuard('jwt'))
   @ApiOperation({ summary: 'Buy a stock item' })
-  @ApiParam({ name: 'id', description: 'Stock item ID' })
-  @ApiBody({
-    schema: {
-      type: 'object',
-      properties: {
-        quantity: { type: 'number' },
-        userId: { type: 'string' },
-      },
-    },
-  })
+  @ApiBody({ type: BuyItemDto })
   @ApiResponse({ status: 200, description: 'Item bought successfully.' })
-  async buyItem(
-    @Param('id') id: string,
-    @Body('quantity') quantity: number,
-    @Body('userId') userId: string,
-  ) {
-    return this.service.buyItem(id, quantity, userId);
+  async buyItems(@Body() dto: BuyItemDto) {
+    const { items, userId, practitionerId } = dto;
+    return this.service.buyItems(items, userId, practitionerId);
   }
 
   @Patch(':id')
@@ -92,5 +82,10 @@ export class PharmacyStockController {
   @ApiParam({ name: 'id', description: 'Stock item ID' })
   delete(@Param('id') id: string) {
     return this.service.delete(id);
+  }
+
+  @Get('sales/:practitionerId')
+  async getSales(@Param('practitionerId') practitionerId: string) {
+    return this.service.getSales(practitionerId);
   }
 }

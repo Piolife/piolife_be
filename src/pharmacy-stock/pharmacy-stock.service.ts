@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import {
   BadRequestException,
   Injectable,
@@ -15,13 +16,26 @@ import {
   Wallet,
   WalletDocument,
 } from 'src/wallet/schema/wallet.schema';
+import { User, UserDocument } from 'src/user/Schema/user.schema';
+import {
+  PharmacySale,
+  PharmacySaleDocument,
+} from './schema/pharmacyOrder.schema';
 
 @Injectable()
 export class PharmacyStockService {
   constructor(
     @InjectModel(PharmacyStock.name)
-    private stockModel: Model<PharmacyStockDocument>,
-    @InjectModel(Wallet.name) private walletModel: Model<WalletDocument>,
+    private stockModel: Model<PharmacyStockDocument>, // 👈 correct
+
+    @InjectModel(User.name)
+    private userModel: Model<UserDocument>, // 👈 correct
+
+    @InjectModel(Wallet.name)
+    private walletModel: Model<WalletDocument>,
+
+    @InjectModel(PharmacySale.name)
+    private pharmacySaleModel: Model<PharmacySaleDocument>,
   ) {}
 
   async create(
@@ -49,46 +63,129 @@ export class PharmacyStockService {
     return this.stockModel.find({ user: userId });
   }
 
-  async buyItem(stockId: string, quantity: number, userId: string) {
-    const item = await this.stockModel.findById(stockId);
-    if (!item) throw new NotFoundException('Stock item not found');
+  async buyItems(
+    items: { stockId: string; quantity: number }[],
+    userId: string,
+    practitionerId: string,
+  ) {
+    // 1. Get wallets
+    const userWallet = await this.walletModel.findOne({ userId });
+    const practitionerWallet = await this.walletModel.findOne({
+      userId: practitionerId,
+    });
 
-    if (item.quantity < quantity) {
-      throw new BadRequestException('Not enough stock available');
+    if (!userWallet || !practitionerWallet) {
+      throw new NotFoundException('User or Practitioner wallet not found');
     }
 
-    const totalPrice = item.price * quantity;
+    // 2. Prepare totals
+    let totalCost = 0;
+    const purchases: {
+      stockItem: PharmacyStockDocument;
+      quantity: number;
+      itemCost: number;
+    }[] = [];
 
-    const wallet = await this.walletModel.findOne({ userId });
-    if (!wallet) throw new NotFoundException('Wallet not found');
+    // 3. Check stock availability and calculate total price
+    for (const { stockId, quantity } of items) {
+      const stockItem = await this.stockModel.findById(stockId);
+      if (!stockItem)
+        throw new NotFoundException(`Stock item ${stockId} not found`);
 
-    if (wallet.balance < totalPrice) {
-      throw new BadRequestException('Insufficient wallet balance');
+      if (stockItem.quantity < quantity) {
+        throw new BadRequestException(
+          `Not enough stock available for ${stockItem.name}`,
+        );
+      }
+
+      const itemCost = stockItem.price * quantity;
+      totalCost += itemCost;
+
+      purchases.push({ stockItem, quantity, itemCost });
     }
 
-    // Deduct wallet balance
-    wallet.balance -= totalPrice;
-    // Add transaction log
-    wallet.transactions.push({
-      amount: totalPrice,
+    // 4. Check available funds once (for all items combined)
+    const availableFunds = userWallet.balance;
+    if (availableFunds < totalCost) {
+      throw new BadRequestException('Insufficient balance');
+    }
+
+    // 5. Debit from user wallet
+    let remainingDebit = totalCost;
+
+    if (userWallet.balance >= remainingDebit) {
+      userWallet.balance -= remainingDebit;
+      remainingDebit = 0;
+    }
+
+    userWallet.transactions.push({
+      amount: totalCost,
       type: TransactionType.STOCK_PURCHASE,
-      description: `Purchased ${quantity} unit${quantity > 1 ? 's' : ''} of ${item.name}`,
+      reason: 'Purchased multiple items',
+      description: `Purchased ${purchases.length} items`,
       timestamp: new Date(),
     });
 
-    // Update stock
-    item.quantity -= quantity;
-    item.status = item.quantity === 0 ? 'OUT_OF_STOCK' : 'AVAILABLE';
+    // 6. Credit practitioner wallet
+    practitionerWallet.balance += totalCost;
+    practitionerWallet.transactions.push({
+      amount: totalCost,
+      type: TransactionType.STOCK_SALE,
+      reason: 'Stock items sold',
+      description: `Sold ${purchases.length} items to user: ${userId}`,
+      timestamp: new Date(),
+    });
 
-    await Promise.all([wallet.save(), item.save()]);
+    // 7. Update each stock item
+    for (const { stockItem, quantity } of purchases) {
+      stockItem.quantity -= quantity;
+      stockItem.status =
+        stockItem.quantity === 0 ? 'OUT_OF_STOCK' : 'AVAILABLE';
+      await stockItem.save();
+    }
+
+    // 8. Save wallet changes
+    await Promise.all([userWallet.save(), practitionerWallet.save()]);
+
+    // 9. Update practitioner’s sales count (for multiple purchases, increment by items.length)
+    await this.userModel.updateOne(
+      { _id: practitionerId },
+      { $inc: { consultationCount: purchases.length } },
+    );
+
+    // 10. Save sales record
+    await this.pharmacySaleModel.create({
+      userId,
+      practitionerId,
+      items: purchases.map((p) => ({
+        stockId: p.stockItem._id,
+        name: p.stockItem.name,
+        quantity: p.quantity,
+        price: p.stockItem.price,
+        total: p.itemCost,
+      })),
+      totalAmount: totalCost,
+      status: 'completed',
+    });
 
     return {
       message: 'Purchase successful',
-      itemName: item.name,
-      quantityBought: quantity,
-      totalAmountCharged: totalPrice,
-      remainingWalletBalance: wallet.balance,
+      totalAmountCharged: totalCost,
+      purchasedItems: purchases.map((p) => ({
+        itemName: p.stockItem.name,
+        quantity: p.quantity,
+        totalPrice: p.itemCost,
+      })),
+      remainingWalletBalance: userWallet.balance,
+      remainingLoanBalance: userWallet.loanBalance,
     };
+  }
+  async getSales(practitionerId: string) {
+    const sales = await this.pharmacySaleModel
+      .find({ practitionerId })
+      .sort({ createdAt: -1 }); // 👈 newest first
+
+    return sales;
   }
 
   async findOne(id: string): Promise<PharmacyStock> {

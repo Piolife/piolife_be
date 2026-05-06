@@ -119,11 +119,9 @@ export class MedLabStockService {
     }
 
     // 4. Check balance + loanBalance
-    const availableFunds = userWallet.balance + userWallet.loanBalance;
+    const availableFunds = userWallet.balance;
     if (availableFunds < totalPrice) {
-      throw new BadRequestException(
-        'Insufficient funds (including loan balance).',
-      );
+      throw new BadRequestException('Insufficient funds');
     }
 
     // 5. Debit user wallet
@@ -131,16 +129,6 @@ export class MedLabStockService {
 
     if (userWallet.balance >= remainingDebit) {
       userWallet.balance -= remainingDebit;
-      remainingDebit = 0;
-    } else {
-      remainingDebit -= userWallet.balance;
-      userWallet.balance = 0;
-
-      if (userWallet.loanBalance < remainingDebit) {
-        throw new BadRequestException('Insufficient loan balance.');
-      }
-
-      userWallet.loanBalance -= remainingDebit;
       remainingDebit = 0;
     }
 

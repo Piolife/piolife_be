@@ -53,7 +53,7 @@ export class SessionsService {
     private readonly prescriptionModel: Model<PrescriptionDocument>,
   ) {}
 
-  async findMatchingPractitioners(dto: BookSessionDto) {
+  async findMatchingPractitioners(dto: BookSessionDto): Promise<any> {
     const query: any = {
       role: UserRole.MEDICAL_PRACTITIONER,
     };
@@ -343,7 +343,7 @@ export class SessionsService {
     return consultation;
   }
 
-  async getConsultationsByUser(userId: string) {
+  async getConsultationsByUser(userId: string): Promise<any> {
     // fetch consultations
     const consultations = await this.consultationModel.find({ userId }).lean();
 
@@ -378,7 +378,7 @@ export class SessionsService {
     }));
   }
 
-  async getConsultationsByPractitioner(practitionerId: string) {
+  async getConsultationsByPractitioner(practitionerId: string): Promise<any> {
     const consultations = await this.consultationModel
       .find({ practitionerId })
       .lean();
@@ -467,7 +467,7 @@ export class SessionsService {
     return prescription.save();
   }
 
-  async getPrescriptionsByUser(userId: string) {
+  async getPrescriptionsByUser(userId: string): Promise<any> {
     // Fetch prescriptions for this user
     const prescriptions = await this.prescriptionModel.find({ userId }).lean();
 
@@ -491,7 +491,7 @@ export class SessionsService {
     }));
   }
 
-  async getPrescriptionsByPractitioner(practitionerId: string) {
+  async getPrescriptionsByPractitioner(practitionerId: string): Promise<any> {
     // Fetch prescriptions written by this practitioner
     const prescriptions = await this.prescriptionModel
       .find({ practitionerId })

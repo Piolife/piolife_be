@@ -91,7 +91,7 @@ export class SessionsController {
     @Query('issueIds') issueIds?: string,
     @Query('language') language?: string,
     @Query('userId') userId?: string,
-  ) {
+  ): Promise<any> {
     const specialty = issueIds ? issueIds.split(',').filter(Boolean) : [];
     const languageProficiency = language ? [language] : [];
     const dto: BookSessionDto = {
@@ -103,7 +103,7 @@ export class SessionsController {
   }
 
   @Post('practitioners')
-  async getMatchingPractitioners(@Body() dto: BookSessionDto) {
+  async getMatchingPractitioners(@Body() dto: BookSessionDto): Promise<any> {
     return this.service.findMatchingPractitioners(dto);
   }
 
@@ -136,7 +136,7 @@ export class SessionsController {
   }
 
   @Get('consultations/user/:userId')
-  async getConsultationsByUser(@Param('userId') userId: string) {
+  async getConsultationsByUser(@Param('userId') userId: string): Promise<any> {
     if (!userId) throw new BadRequestException('userId is required');
     return this.service.getConsultationsByUser(userId);
   }
@@ -144,7 +144,7 @@ export class SessionsController {
   @Get('consultations/practitioner/:practitionerId')
   async getConsultationsByPractitioner(
     @Param('practitionerId') practitionerId: string,
-  ) {
+  ): Promise<any> {
     if (!practitionerId)
       throw new BadRequestException('practitionerId is required');
     return this.service.getConsultationsByPractitioner(practitionerId);
@@ -169,7 +169,7 @@ export class SessionsController {
   }
 
   @Get('prescriptions/user/:userId')
-  async getPrescriptionsByUser(@Param('userId') userId: string) {
+  async getPrescriptionsByUser(@Param('userId') userId: string): Promise<any> {
     if (!userId) throw new BadRequestException('userId is required');
     return this.service.getPrescriptionsByUser(userId);
   }
@@ -177,7 +177,7 @@ export class SessionsController {
   @Get('prescriptions/practitioner/:practitionerId')
   async getPrescriptionsByPractitioner(
     @Param('practitionerId') practitionerId: string,
-  ) {
+  ): Promise<any> {
     if (!practitionerId)
       throw new BadRequestException('practitionerId is required');
     return this.service.getPrescriptionsByPractitioner(practitionerId);

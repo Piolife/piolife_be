@@ -5,6 +5,7 @@ import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
+import { IoAdapter } from '@nestjs/platform-socket.io';
 config();
 
 async function bootstrap() {
@@ -16,6 +17,7 @@ async function bootstrap() {
   );
   app.use(helmet());
   app.enableCors();
+  app.useWebSocketAdapter(new IoAdapter(app) as any);
 
   app.setGlobalPrefix('api/v12');
   app.setViewEngine('hbs');

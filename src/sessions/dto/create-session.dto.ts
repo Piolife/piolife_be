@@ -160,4 +160,9 @@ export class CreatePrescriptionDto {
   @IsString()
   @IsOptional()
   referral?: string;
+
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  consultationId?: string;
 }

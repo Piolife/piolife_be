@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import mongoose, { Document } from 'mongoose';
+import { CallbackWithoutResultAndOptionalError, Document } from 'mongoose';
 import { SnowflakeIdGenerator } from 'utils/idGenerator';
 
 const snowflakeIdGenerator = new SnowflakeIdGenerator();
@@ -44,8 +44,8 @@ export class PharmacyStock {
 export const PharmacyStockSchema = SchemaFactory.createForClass(PharmacyStock);
 
 // Optional: Automatically update status when quantity changes
-PharmacyStockSchema.pre('save', function (next) {
-  const stock = this as PharmacyStockDocument;
+PharmacyStockSchema.pre('save', function (next: CallbackWithoutResultAndOptionalError) {
+  const stock = this as unknown as PharmacyStockDocument;
   if (stock.quantity === 0) {
     stock.status = 'OUT_OF_STOCK';
   } else {

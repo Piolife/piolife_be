@@ -462,7 +462,7 @@ export class UserService {
     const user = await this.userModel.findOne({
       email: { $regex: new RegExp(`^${email}$`, 'i') },
       role,
-    });
+    } as any);
 
     if (!user) {
       throw new NotFoundException(
@@ -525,7 +525,7 @@ export class UserService {
     const user = await this.userModel.findOne({
       email: email.toLowerCase(), // assumes you store lowercase emails
       role,
-    });
+    } as any);
 
     if (!user) throw new NotFoundException('User not found with this role');
 

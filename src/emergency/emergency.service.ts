@@ -203,6 +203,6 @@ export class EmergencyStockService {
     }
   }
   async getEmergenciesByClient(userId: string): Promise<any[]> {
-    return this.emergencyModel.find({ userId }).sort({ createdAt: -1 }).lean();
+    return this.emergencyStockModel.find({ userId }).sort({ createdAt: -1 }).lean();
   }
 }

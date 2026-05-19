@@ -72,7 +72,7 @@ export class SessionsService {
     let specialtyDetails: any[] = [];
     if (dto.specialty?.length) {
       specialtyDetails = await this.medicalIssueModel.find({
-        _id: { $in: dto.specialty },
+        _id: { $in: dto.specialty } as any,
       });
 
       const totalCost = specialtyDetails.reduce(
@@ -194,7 +194,7 @@ export class SessionsService {
     // Transfer funds
     const totalCost = session.specialty?.length
       ? (
-          await this.medicalIssueModel.find({ _id: { $in: session.specialty } })
+          await this.medicalIssueModel.find({ _id: { $in: session.specialty } as any })
         ).reduce((sum, issue) => sum + (issue.price || 0), 0)
       : 0;
 
@@ -241,7 +241,7 @@ export class SessionsService {
     // Fetch related users/practitioners with needed fields
     const users = await this.userModel
       .find(
-        { _id: { $in: Array.from(ids) } },
+        { _id: { $in: Array.from(ids) } as any },
         { _id: 1, firstName: 1, lastName: 1, userName: 1, profilePicture: 1 },
       )
       .lean();
@@ -354,14 +354,14 @@ export class SessionsService {
     // fetch all related users
     const users = await this.userModel
       .find({
-        _id: { $in: [userId, ...practitionerIds] },
+        _id: { $in: [userId, ...practitionerIds] } as any,
       })
       .lean();
 
     // fetch all related medical issues
     const medicalIssues = await this.medicalIssueModel
       .find({
-        _id: { $in: medicalIssueIds },
+        _id: { $in: medicalIssueIds } as any,
       })
       .lean();
 
@@ -386,7 +386,7 @@ export class SessionsService {
     const userIds = consultations.map((c) => c.userId);
     const users = await this.userModel
       .find({
-        _id: { $in: [practitionerId, ...userIds] },
+        _id: { $in: [practitionerId, ...userIds] } as any,
       })
       .lean();
 
@@ -437,7 +437,7 @@ export class SessionsService {
 
       // Increment consultation count
       await this.userModel.updateOne(
-        { _id: practitionerId },
+        { _id: practitionerId as any },
         { $inc: { consultationCount: 1 } },
       );
     }
@@ -476,7 +476,7 @@ export class SessionsService {
 
     // Fetch all practitioners in one query
     const practitioners = await this.userModel
-      .find({ _id: { $in: practitionerIds } })
+      .find({ _id: { $in: practitionerIds } as any })
       .lean();
 
     // Map for quick lookup
@@ -501,7 +501,7 @@ export class SessionsService {
     const userIds = prescriptions.map((p) => p.userId);
 
     // Fetch all users in one query
-    const users = await this.userModel.find({ _id: { $in: userIds } }).lean();
+    const users = await this.userModel.find({ _id: { $in: userIds } as any }).lean();
 
     // Map for quick lookup
     const userMap = new Map(users.map((u) => [u._id.toString(), u]));

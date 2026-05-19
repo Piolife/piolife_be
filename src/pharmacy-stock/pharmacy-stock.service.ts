@@ -21,21 +21,24 @@ import {
   PharmacySale,
   PharmacySaleDocument,
 } from './schema/pharmacyOrder.schema';
+import { WalletService } from 'src/wallet/wallet.service';
 
 @Injectable()
 export class PharmacyStockService {
   constructor(
     @InjectModel(PharmacyStock.name)
-    private stockModel: Model<PharmacyStockDocument>, // 👈 correct
+    private stockModel: Model<PharmacyStockDocument>,
 
     @InjectModel(User.name)
-    private userModel: Model<UserDocument>, // 👈 correct
+    private userModel: Model<UserDocument>,
 
     @InjectModel(Wallet.name)
     private walletModel: Model<WalletDocument>,
 
     @InjectModel(PharmacySale.name)
     private pharmacySaleModel: Model<PharmacySaleDocument>,
+
+    private readonly walletService: WalletService,
   ) {}
 
   async createOrder(
@@ -44,9 +47,9 @@ export class PharmacyStockService {
     pharmacyId: string,
   ): Promise<any> {
     // Fetch all selected drugs
-    const drugs = await this.pharmacyStockModel.find({
-      _id: { $in: drugIds },
-      userId: pharmacyId,
+    const drugs = await this.stockModel.find({
+      _id: { $in: drugIds as any },
+      user: pharmacyId,
     });
 
     if (!drugs.length) {
@@ -65,7 +68,7 @@ export class PharmacyStockService {
     userWallet.balance -= totalAmount;
     userWallet.transactions.push({
       amount: totalAmount,
-      type: 'STOCK_PURCHASE',
+      type: TransactionType.STOCK_PURCHASE,
       description: `Drug order from pharmacy ${pharmacyId}`,
       timestamp: new Date(),
     });
@@ -78,7 +81,7 @@ export class PharmacyStockService {
       pharmacyWallet.balance += totalAmount;
       pharmacyWallet.transactions.push({
         amount: totalAmount,
-        type: 'STOCK_SALE',
+        type: TransactionType.STOCK_SALE,
         description: `Drug order from client ${userId}`,
         timestamp: new Date(),
       });
@@ -86,13 +89,13 @@ export class PharmacyStockService {
     }
 
     // Save order record
-    const order = await this.orderModel.create({
+    const order = await this.pharmacySaleModel.create({
       userId,
-      pharmacyId,
-      drugs: drugs.map((d) => ({ name: d.name, price: d.price })),
+      practitionerId: pharmacyId,
+      items: drugs.map((d) => ({ stockId: (d as any)._id, name: d.name, quantity: 1, price: d.price, total: d.price })),
       totalAmount,
       status: 'pending',
-    });
+    } as any);
 
     return {
       success: true,
@@ -213,7 +216,7 @@ export class PharmacyStockService {
 
     // 9. Update practitioner’s sales count (for multiple purchases, increment by items.length)
     await this.userModel.updateOne(
-      { _id: practitionerId },
+      { _id: practitionerId as any },
       { $inc: { consultationCount: purchases.length } },
     );
 
@@ -245,7 +248,7 @@ export class PharmacyStockService {
     };
   }
   async getOrdersByPharmacy(pharmacyId: string): Promise<any[]> {
-    return this.orderModel.find({ pharmacyId }).sort({ createdAt: -1 }).lean();
+    return this.pharmacySaleModel.find({ practitionerId: pharmacyId }).sort({ createdAt: -1 }).lean();
   }
   async getSales(practitionerId: string) {
     const sales = await this.pharmacySaleModel

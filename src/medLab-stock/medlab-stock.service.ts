@@ -90,9 +90,9 @@ export class MedLabStockService {
     const { testIds, userId, labId, diagnosisNote } = dto;
 
     // Fetch all selected tests
-    const tests = await this.medLabStockModel.find({
-      _id: { $in: testIds },
-      userId: labId,
+    const tests = await this.stockModel.find({
+      _id: { $in: testIds as any },
+      user: labId,
     });
 
     if (!tests.length) {
@@ -133,12 +133,11 @@ export class MedLabStockService {
     // Save order — include diagnosisNote so lab sees doctor's instructions
     const order = await this.labOrderModel.create({
       userId,
-      labId,
-      tests: tests.map((t) => ({ name: t.name, price: t.price })),
-      diagnosisNote: diagnosisNote ?? '', // ← FIX: store the note
+      medLabId: labId,
+      testIds,
       totalAmount,
       status: 'pending',
-    });
+    } as any);
 
     return {
       success: true,

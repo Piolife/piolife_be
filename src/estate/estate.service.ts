@@ -63,7 +63,7 @@ export class EstateService {
       balance,
       timesPaid: 1,
       lastPaymentDate: now,
-      nextDueDate: completed ? null : addOneMonth(now),
+      nextDueDate: completed ? undefined : addOneMonth(now),
       completed,
       paymentType,
       agreementDate: dto.agreementDate ? new Date(dto.agreementDate) : now,
@@ -150,7 +150,7 @@ export class EstateService {
   }
 
   async getOrderById(orderId: string, userId: string): Promise<EstateOrder> {
-    const order = await this.orderModel.findOne({ _id: orderId, userId }).lean();
+    const order = await this.orderModel.findOne({ _id: orderId as any, userId }).lean();
     if (!order) throw new NotFoundException('Estate order not found.');
     return order as any;
   }

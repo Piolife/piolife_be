@@ -332,37 +332,17 @@ export class SessionsService {
     createConsultationDto: CreateConsultationDto,
     userId: string,
   ): Promise<Consultations> {
-    // Directly create without checking
+    // Just record the consultation — no wallet deduction here.
+    // Wallet is debited by the frontend BEFORE the call starts (pay4Consultation.tsx)
+    // and again credited to the practitioner inside createPrescription().
     const consultation = await this.consultationModel.create({
       ...createConsultationDto,
-      userId: userId,
+      userId,
+      status: 'in_progress',
     });
-
     return consultation;
   }
 
-  // async getConsultationsByUser(userId: string) {
-  //   // fetch consultations
-  //   const consultations = await this.consultationModel.find({ userId }).lean();
-
-  //   // extract unique user + practitioner IDs
-  //   const practitionerIds = consultations.map((c) => c.practitionerId);
-  //   const users = await this.userModel
-  //     .find({
-  //       _id: { $in: [userId, ...practitionerIds] },
-  //     })
-  //     .lean();
-
-  //   // map for quick lookup
-  //   const userMap = new Map(users.map((u) => [u._id.toString(), u]));
-
-  //   // attach user + practitioner details
-  //   return consultations.map((c) => ({
-  //     ...c,
-  //     user: userMap.get(c.userId.toString()) || null,
-  //     practitioner: userMap.get(c.practitionerId.toString()) || null,
-  //   }));
-  // }
   async getConsultationsByUser(userId: string) {
     // fetch consultations
     const consultations = await this.consultationModel.find({ userId }).lean();
@@ -419,84 +399,71 @@ export class SessionsService {
     }));
   }
 
-  async createPrescription(
-    createPrescriptionDto: CreatePrescriptionDto,
-  ): Promise<Prescription> {
-    const { userId, practitionerId, medicalIssueId } = createPrescriptionDto;
+  async createPrescription(dto: CreatePrescriptionDto): Promise<Prescription> {
+    const { userId, practitionerId, medicalIssueId } = dto;
 
     if (!userId || !practitionerId) {
       throw new BadRequestException('UserId and PractitionerId are required.');
     }
 
-    // 1. Get medical issue
-    const medicalIssue = await this.medicalIssueModel.findById(medicalIssueId);
-    if (!medicalIssue) {
-      throw new NotFoundException('Medical issue not found.');
-    }
+    // Normalise field aliases from frontend
+    const complain = dto.complaint ?? dto.complain ?? '';
+    const advice = dto.prognosis ?? dto.advice ?? '';
+    const diagnosis = dto.diagnosis ?? '';
 
-    // 2. Get wallets
-    const userWallet = await this.walletService.getWalletByUserId(userId);
+    // Credit practitioner wallet (patient already paid via /wallet/:id/deduct)
     const practitionerWallet =
       await this.walletService.getWalletByUserId(practitionerId);
-
-    if (!userWallet || !practitionerWallet) {
-      throw new NotFoundException('User or Practitioner wallet not found.');
+    if (!practitionerWallet) {
+      throw new NotFoundException('Practitioner wallet not found.');
     }
 
-    // 3. Check user’s balance + loanBalance
-    const availableFunds = userWallet.balance;
-    if (availableFunds < medicalIssue.price) {
-      throw new BadRequestException('Insufficient balance ');
+    let feeAmount = 0;
+    if (medicalIssueId) {
+      const medicalIssue =
+        await this.medicalIssueModel.findById(medicalIssueId);
+      feeAmount = medicalIssue?.price ?? 0;
     }
 
-    // 4. Debit from user wallet
-    let remainingDebit = medicalIssue.price;
+    if (feeAmount > 0) {
+      practitionerWallet.balance += feeAmount;
+      practitionerWallet.transactions.push({
+        amount: feeAmount,
+        type: TransactionType.CONSULTATION_FEE,
+        description: `Consultation fee from patient ${userId}`,
+        timestamp: new Date(),
+      });
+      await practitionerWallet.save();
 
-    if (userWallet.balance >= remainingDebit) {
-      // fully deduct from balance
-      userWallet.balance -= remainingDebit;
-      remainingDebit = 0;
+      // Increment consultation count
+      await this.userModel.updateOne(
+        { _id: practitionerId },
+        { $inc: { consultationCount: 1 } },
+      );
     }
 
-    userWallet.transactions.push({
-      amount: medicalIssue.price,
-      type: TransactionType.CONSULTATION_PAYMENT,
-      reason: 'Prescription consultation',
-      description: `Paid for medical issue: ${medicalIssue.name}`,
-      timestamp: new Date(),
-    });
+    // Mark the consultation as completed
+    if (dto.consultationId) {
+      await this.consultationModel.findByIdAndUpdate(dto.consultationId, {
+        status: 'completed',
+      });
+    }
 
-    await userWallet.save();
-
-    // 5. Credit practitioner wallet
-    practitionerWallet.balance += medicalIssue.price;
-    practitionerWallet.transactions.push({
-      amount: medicalIssue.price,
-      type: TransactionType.CONSULTATION_FEE,
-      reason: 'Consultation fee received',
-      description: `Received consultation payment from user: ${userId}`,
-      timestamp: new Date(),
-    });
-
-    await practitionerWallet.save();
-
-    // 6. Save consultation record
-    await this.consultationModel.create({
+    // Save the prescription with all fields
+    const prescription = new this.prescriptionModel({
       userId,
       practitionerId,
-      medicalIssueId,
-      amount: medicalIssue.price,
-      status: 'completed',
+      medicalIssueId: medicalIssueId ?? null,
+      consultationId: dto.consultationId ?? null,
+      complain,
+      complaint: dto.complaint ?? '',
+      diagnosis,
+      prescription: dto.prescription,
+      advice,
+      prognosis: dto.prognosis ?? '',
+      referral: dto.referral ?? '',
     });
 
-    // 6b. Increment consultationCount for practitioner
-    await this.userModel.updateOne(
-      { _id: practitionerId },
-      { $inc: { consultationCount: 1 } },
-    );
-
-    // 7. Create prescription
-    const prescription = new this.prescriptionModel(createPrescriptionDto);
     return prescription.save();
   }
 

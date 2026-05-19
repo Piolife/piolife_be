@@ -1,3 +1,13 @@
+/**
+ * pharmacy-stock.controller.ts — PATCHED
+ *
+ * FIXES vs original:
+ * 1. GET user/:userId was MISSING — frontend calls /pharmacy-stock/user/:userId
+ *    to fetch a specific pharmacy's drugs. Original only had GET / (all for logged user).
+ * 2. POST orders was MISSING — frontend calls /pharmacy-stock/orders to place drug orders.
+ * 3. GET orders/:userId was MISSING — pharmServices.tsx calls this.
+ * 4. GET sales/:practitionerId renamed param to userId for consistency.
+ */
 import {
   Controller,
   Get,
@@ -25,6 +35,7 @@ import { BuyItemDto } from './dto/buy-drug.dto';
 interface RequestWithUser extends Request {
   user: { userId: string; username: string };
 }
+
 @ApiTags('Pharmacy Stock')
 @Controller('pharmacy-stock')
 export class PharmacyStockController {
@@ -33,59 +44,84 @@ export class PharmacyStockController {
   @Post()
   @UseGuards(AuthGuard('jwt'))
   @ApiOperation({ summary: 'Create a new stock item' })
-  @ApiResponse({ status: 201, description: 'Stock item created successfully.' })
   create(@Body() dto: CreatePharmacyStockDto, @Req() req: RequestWithUser) {
-    const userId = req.user.userId;
-    return this.service.create(dto, userId);
+    return this.service.create(dto, req.user.userId);
   }
 
   @Get()
   @UseGuards(AuthGuard('jwt'))
-  @ApiOperation({ summary: 'Get all stock items for the logged-in user' })
-  @ApiResponse({
-    status: 200,
-    description: 'List of stock items for the user.',
-  })
+  @ApiOperation({ summary: 'Get all stock items for the logged-in pharmacy' })
   findAll(@Req() req: RequestWithUser) {
-    const userId = req.user.userId;
+    return this.service.findAll(req.user.userId);
+  }
+
+  // FIX: added — frontend drugs.tsx and pharmDrugs.tsx call GET /pharmacy-stock/user/:userId
+  @Get('user/:userId')
+  @ApiOperation({ summary: 'Get all stock for a specific pharmacy by userId' })
+  @ApiParam({ name: 'userId', required: true })
+  findByUser(@Param('userId') userId: string) {
     return this.service.findAll(userId);
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Get a specific stock item by ID' })
-  @ApiParam({ name: 'id', description: 'Stock item ID' })
-  @ApiResponse({ status: 200, description: 'Stock item retrieved.' })
   findOne(@Param('id') id: string) {
     return this.service.findOne(id);
   }
 
+  // FIX: added — pharmDrugs.tsx calls POST /pharmacy-stock/orders
+  @Post('orders')
+  @UseGuards(AuthGuard('jwt'))
+  @ApiOperation({
+    summary: 'Place a drug order (deduct wallet, notify pharmacy)',
+  })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['drugIds', 'userId', 'pharmacyId'],
+      properties: {
+        drugIds: { type: 'array', items: { type: 'string' } },
+        userId: { type: 'string' },
+        pharmacyId: { type: 'string' },
+      },
+    },
+  })
+  async createOrder(
+    @Body() body: { drugIds: string[]; userId: string; pharmacyId: string },
+  ) {
+    return this.service.createOrder(body.drugIds, body.userId, body.pharmacyId);
+  }
+
+  // FIX: added — pharmServices.tsx calls GET /pharmacy-stock/orders/:userId
+  @Get('orders/:userId')
+  @ApiOperation({ summary: 'Get all orders for a pharmacy' })
+  @ApiParam({ name: 'userId', required: true })
+  async getOrders(@Param('userId') userId: string) {
+    return this.service.getOrdersByPharmacy(userId);
+  }
+
   @Post('buy')
   @UseGuards(AuthGuard('jwt'))
-  @ApiOperation({ summary: 'Buy a stock item' })
-  @ApiBody({ type: BuyItemDto })
-  @ApiResponse({ status: 200, description: 'Item bought successfully.' })
+  @ApiOperation({ summary: 'Buy stock items (legacy endpoint)' })
   async buyItems(@Body() dto: BuyItemDto) {
-    const { items, userId, practitionerId } = dto;
-    return this.service.buyItems(items, userId, practitionerId);
+    return this.service.buyItems(dto.items, dto.userId, dto.practitionerId);
   }
 
   @Patch(':id')
   @ApiOperation({ summary: 'Update stock item' })
-  @ApiParam({ name: 'id', description: 'Stock item ID' })
-  @ApiBody({ type: PharmacyStock })
   updateStock(@Param('id') id: string, @Body() dto: Partial<PharmacyStock>) {
     return this.service.updateStock(id, dto);
   }
 
   @Delete(':id')
   @ApiOperation({ summary: 'Delete a stock item' })
-  @ApiParam({ name: 'id', description: 'Stock item ID' })
   delete(@Param('id') id: string) {
     return this.service.delete(id);
   }
 
-  @Get('sales/:practitionerId')
-  async getSales(@Param('practitionerId') practitionerId: string) {
-    return this.service.getSales(practitionerId);
+  @Get('sales/:userId')
+  @ApiOperation({ summary: 'Get sales for a pharmacy' })
+  async getSales(@Param('userId') userId: string) {
+    return this.service.getSales(userId);
   }
 }

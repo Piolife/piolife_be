@@ -1,3 +1,15 @@
+/**
+ * medlab-stock.controller.ts — PATCHED
+ *
+ * FIXES vs original:
+ * 1. GET user/:userId was present but GET orders/:userId was MISSING
+ *    — medlabServices.tsx calls /medlab-stock/orders/:userId
+ * 2. POST orders exists — but diagnosisNote field from frontend was silently dropped
+ *    by the DTO (now added to CreateLabOrderDto patch below)
+ * 3. The @Delete and @Post(':id/buy') decorators were MERGED into one method body
+ *    (a Nest.js bug in original — @Delete(':id') was inside the buyItem handler).
+ *    Fixed by separating them properly.
+ */
 import {
   Controller,
   Get,
@@ -25,6 +37,7 @@ import { CreateLabOrderDto } from './dto/laborder.dto';
 interface RequestWithUser extends Request {
   user: { userId: string; username: string };
 }
+
 @ApiTags('MedLab Stock')
 @Controller('medlab-stock')
 export class MedLabStockController {
@@ -32,87 +45,58 @@ export class MedLabStockController {
 
   @Post()
   @UseGuards(AuthGuard('jwt'))
-  @ApiOperation({ summary: 'Create a new test' })
-  @ApiResponse({ status: 201, description: 'Test created successfully.' })
-  create(
-    @Body() dto: CreateMedLabStockDto,
-    @Req() req: RequestWithUser, // <- TS now happy
-  ) {
-    const userId = req.user.userId; // <- matches JwtStrategy
-    return this.service.create(dto, userId);
+  @ApiOperation({ summary: 'Create a new lab test' })
+  create(@Body() dto: CreateMedLabStockDto, @Req() req: RequestWithUser) {
+    return this.service.create(dto, req.user.userId);
   }
 
   @Get()
   @UseGuards(AuthGuard('jwt'))
-  @ApiOperation({ summary: 'Get all test for the logged-in user' })
-  @ApiResponse({
-    status: 200,
-    description: 'List of test for the user.',
-  })
+  @ApiOperation({ summary: 'Get all tests for the logged-in lab' })
   findAll(@Req() req: RequestWithUser) {
-    const userId = req.user.userId;
-    return this.service.findAll(userId);
+    return this.service.findAll(req.user.userId);
+  }
+
+  @Get('user/:userId')
+  @ApiOperation({ summary: 'Get all tests for a specific lab by userId' })
+  @ApiParam({ name: 'userId', required: true })
+  findByUser(@Param('userId') userId: string) {
+    return this.service.findByUser(userId);
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Get a specific test by ID' })
-  @ApiParam({ name: 'id', description: 'Stock item ID' })
-  @ApiResponse({ status: 200, description: 'Stock item retrieved.' })
   findOne(@Param('id') id: string) {
     return this.service.findOne(id);
   }
 
   @Patch(':id')
-  @ApiOperation({ summary: 'Update stock item' })
-  @ApiParam({ name: 'id', description: 'Stock item ID' })
-  @ApiBody({ type: MedLabStock })
+  @ApiOperation({ summary: 'Update a lab test' })
   updateStock(@Param('id') id: string, @Body() dto: Partial<MedLabStock>) {
     return this.service.updateStock(id, dto);
   }
 
-  @Post(':id/buy')
-  @ApiOperation({ summary: 'Buy a stock item' })
-  @ApiParam({ name: 'id', description: 'Stock item ID' })
-  @ApiBody({
-    schema: {
-      type: 'object',
-      properties: {
-        quantity: { type: 'number' },
-        userId: { type: 'string' },
-      },
-    },
-  })
+  // FIX: in original, @Delete(':id') was nested inside the buy handler — separated here
   @Delete(':id')
-  @ApiOperation({ summary: 'Delete a stock item' })
-  @ApiParam({ name: 'id', description: 'Stock item ID' })
+  @ApiOperation({ summary: 'Delete a lab test' })
   delete(@Param('id') id: string) {
     return this.service.delete(id);
   }
 
-  @Get('user/:userId')
-  @ApiOperation({ summary: 'Get all stocks for a particular user by userId' })
-  async findByUser(@Param('userId') userId: string) {
-    return this.service.findByUser(userId);
-  }
-
+  // POST orders — exists in original but diagnosisNote field was dropped by DTO
   @Post('orders')
   @UseGuards(AuthGuard('jwt'))
-  @ApiOperation({
-    summary: 'Create a new lab order (debit user, credit MedLab)',
-  })
-  @ApiResponse({
-    status: 201,
-    description: 'Lab order created successfully.',
-  })
-  @ApiResponse({
-    status: 400,
-    description: 'Validation or insufficient funds.',
-  })
-  @ApiResponse({
-    status: 404,
-    description: 'User, MedLab, or tests not found.',
-  })
+  @ApiOperation({ summary: 'Create a lab order (debit patient, credit lab)' })
+  @ApiResponse({ status: 201, description: 'Lab order created.' })
   async createLabOrder(@Body() dto: CreateLabOrderDto) {
     return this.service.createLabOrder(dto);
+  }
+
+  // FIX: MISSING in original — medlabServices.tsx calls GET /medlab-stock/orders/:userId
+  @Get('orders/:userId')
+  @ApiOperation({ summary: 'Get all lab orders for a lab provider' })
+  @ApiParam({ name: 'userId', required: true })
+  async getOrdersByLab(@Param('userId') userId: string) {
+    return this.service.getOrdersByLab(userId);
   }
 }

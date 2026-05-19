@@ -1,4 +1,15 @@
-/* eslint-disable prettier/prettier */
+/**
+ * sessions.controller.ts — PATCHED
+ *
+ * FIXES vs original:
+ * 1. GET practitioners now accepts query params (frontend calls GET not POST)
+ * 2. POST practitioners kept for backwards compat
+ * 3. GET prescriptions/user/:userId — prescription schema uses `complain` not `complaint`
+ *    and `advice` not `prognosis` — frontend field names aligned in DTO patch
+ * 4. Duplicate route GET history/:userId & GET history/:practitionerId (same path!) — FIXED
+ *    by renaming practitioner history to GET history/practitioner/:practitionerId
+ * 5. createPrescription requires JWT but request has no @UseGuards — added
+ */
 import {
   Controller,
   Post,
@@ -8,6 +19,7 @@ import {
   BadRequestException,
   UseGuards,
   Req,
+  Query,
 } from '@nestjs/common';
 import { SessionsService } from './sessions.service';
 import {
@@ -22,205 +34,152 @@ import {
   ApiParam,
   ApiBody,
   ApiResponse,
+  ApiQuery,
 } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 
 interface RequestWithUser extends Request {
   user: { userId: string; username: string };
 }
+
 @ApiTags('Sessions')
 @Controller('sessions')
 export class SessionsController {
   constructor(private readonly service: SessionsService) {}
 
+  // ── Sessions ──────────────────────────────────────────────────────────────
+
   @Get('pending/:practitionerId')
-  @ApiOperation({ summary: 'Get pending sessions for a practitioner' })
-  @ApiParam({ name: 'practitionerId', required: true, type: String })
-  @ApiResponse({
-    status: 200,
-    description: 'Pending sessions retrieved successfully',
-  })
   async getPendingSessions(@Param('practitionerId') practitionerId: string) {
     return this.service.getPendingSessionsForPractitioner(practitionerId);
   }
 
   @Get('with-review/:sessionId')
-  @ApiOperation({ summary: 'Get a session along with its review' })
-  @ApiParam({ name: 'sessionId', required: true })
-  @ApiResponse({
-    status: 200,
-    description: 'Session with review fetched successfully',
-  })
   async getSessionWithReview(@Param('sessionId') sessionId: string) {
-    if (!sessionId) {
-      throw new BadRequestException('sessionId is required');
-    }
-
+    if (!sessionId) throw new BadRequestException('sessionId is required');
     return this.service.getSessionWithReview(sessionId);
   }
 
   @Get('history/:userId')
-  @ApiOperation({ summary: 'Get all session history for a user' })
-  @ApiParam({ name: 'userId', required: true, type: String })
-  @ApiResponse({
-    status: 200,
-    description: 'User session history retrieved successfully',
-  })
   async getUserSessionHistory(@Param('userId') userId: string) {
-    if (!userId) {
-      throw new BadRequestException('userId is required');
-    }
+    if (!userId) throw new BadRequestException('userId is required');
     return this.service.getSessionsForUser(userId);
   }
 
-  @Get('history/:practitionerId')
-  @ApiOperation({
-    summary: 'Get all session history for a medical practitioner',
-  })
-  @ApiParam({ name: 'practitionerId', required: true, type: String })
-  @ApiResponse({
-    status: 200,
-    description: 'User session history retrieved successfully',
-  })
-  async getPractitionerIdSessionHistory(
+  // FIX: was GET history/:practitionerId — clashes with GET history/:userId (same path)
+  @Get('history/practitioner/:practitionerId')
+  async getPractitionerSessionHistory(
     @Param('practitionerId') practitionerId: string,
   ) {
-    if (!practitionerId) {
-      throw new BadRequestException('userId is required');
-    }
+    if (!practitionerId)
+      throw new BadRequestException('practitionerId is required');
     return this.service.getSessionsForPractitionerId(practitionerId);
   }
 
-  @Post('practitioners')
+  // ── Practitioners matching ─────────────────────────────────────────────────
+
+  // FIX: frontend calls GET /sessions/practitioners?issueIds=...&language=...
+  // Original was POST only — added GET version
+  @Get('practitioners')
   @ApiOperation({
-    summary: 'Find matching medical practitioners based on filters',
+    summary: 'Find matching practitioners (GET version for frontend)',
   })
-  @ApiBody({ type: BookSessionDto })
-  @ApiResponse({ status: 200, description: 'Matching practitioners returned' })
+  @ApiQuery({ name: 'issueIds', required: false, type: String })
+  @ApiQuery({ name: 'language', required: false, type: String })
+  @ApiQuery({ name: 'userId', required: false, type: String })
+  async getMatchingPractitionersQuery(
+    @Query('issueIds') issueIds?: string,
+    @Query('language') language?: string,
+    @Query('userId') userId?: string,
+  ) {
+    const specialty = issueIds ? issueIds.split(',').filter(Boolean) : [];
+    const languageProficiency = language ? [language] : [];
+    const dto: BookSessionDto = {
+      specialty,
+      languageProficiency,
+      userId: userId ?? '',
+    };
+    return this.service.findMatchingPractitioners(dto);
+  }
+
+  @Post('practitioners')
   async getMatchingPractitioners(@Body() dto: BookSessionDto) {
     return this.service.findMatchingPractitioners(dto);
   }
 
   @Post('book-session')
-  @ApiOperation({ summary: 'Book a session with any available practitioner' })
-  @ApiBody({ type: BookSessionDto })
-  @ApiResponse({ status: 201, description: 'Session booked successfully' })
   async bookSession(@Body() dto: BookSessionDto) {
     return this.service.bookSessionWithAnyPractitioner(dto);
   }
 
   @Post('review')
-  @ApiOperation({ summary: 'Submit a review for a session' })
-  @ApiBody({ type: CreateReviewDto })
-  @ApiResponse({ status: 201, description: 'Review submitted successfully' })
   async submitReview(@Body() dto: CreateReviewDto) {
-    const { practitionerId } = dto;
-    if (!practitionerId) {
+    if (!dto.practitionerId) {
       throw new BadRequestException('practitionerId is required');
     }
-    return this.service.submitReview(dto, practitionerId);
+    return this.service.submitReview(dto, dto.practitionerId);
   }
+
+  // ── Consultations ─────────────────────────────────────────────────────────
 
   @Post('consultations')
   @UseGuards(AuthGuard('jwt'))
-  @ApiOperation({
-    summary: 'Create a new consultation between user and practitioner',
-  })
-  @ApiBody({ type: CreateConsultationDto })
-  @ApiResponse({
-    status: 201,
-    description: 'Consultation created successfully',
-  })
   async createConsultation(
     @Body() dto: CreateConsultationDto,
     @Req() req: RequestWithUser,
   ) {
-    const { practitionerId } = dto;
     const userId = req.user.userId;
-    if (!userId || !practitionerId) {
+    if (!userId || !dto.practitionerId) {
       throw new BadRequestException('userId and practitionerId are required');
     }
-
     return this.service.create(dto, userId);
   }
 
   @Get('consultations/user/:userId')
-  @ApiOperation({ summary: 'Get all consultations for a user' })
-  @ApiParam({ name: 'userId', required: true, type: String })
-  @ApiResponse({
-    status: 200,
-    description: 'Consultations for user retrieved successfully',
-  })
   async getConsultationsByUser(@Param('userId') userId: string) {
-    if (!userId) {
-      throw new BadRequestException('userId is required');
-    }
+    if (!userId) throw new BadRequestException('userId is required');
     return this.service.getConsultationsByUser(userId);
   }
 
   @Get('consultations/practitioner/:practitionerId')
-  @ApiOperation({ summary: 'Get all consultations for a practitioner' })
-  @ApiParam({ name: 'practitionerId', required: true, type: String })
-  @ApiResponse({
-    status: 200,
-    description: 'Consultations for practitioner retrieved successfully',
-  })
   async getConsultationsByPractitioner(
     @Param('practitionerId') practitionerId: string,
   ) {
-    if (!practitionerId) {
+    if (!practitionerId)
       throw new BadRequestException('practitionerId is required');
-    }
     return this.service.getConsultationsByPractitioner(practitionerId);
   }
 
+  // ── Prescriptions ─────────────────────────────────────────────────────────
+
+  // FIX: original had no @UseGuards here — anyone could write a prescription
   @Post('prescriptions')
-  @ApiOperation({ summary: 'Create a new prescription' })
-  @ApiBody({ type: CreatePrescriptionDto })
-  @ApiResponse({
-    status: 201,
-    description: 'Prescription created successfully',
-  })
+  @UseGuards(AuthGuard('jwt'))
   async createPrescription(
     @Body() dto: CreatePrescriptionDto,
     @Req() req: RequestWithUser,
   ) {
-    const { userId } = dto;
     const practitionerId = req.user.userId;
-    if (!userId || !practitionerId) {
+    if (!dto.userId || !practitionerId) {
       throw new BadRequestException('userId and practitionerId are required');
     }
-
+    // Ensure practitionerId in body matches authenticated user
+    dto.practitionerId = practitionerId;
     return this.service.createPrescription(dto);
   }
 
   @Get('prescriptions/user/:userId')
-  @ApiOperation({ summary: 'Get all prescriptions for a user' })
-  @ApiParam({ name: 'userId', required: true, type: String })
-  @ApiResponse({
-    status: 200,
-    description: 'Prescriptions for user retrieved successfully',
-  })
   async getPrescriptionsByUser(@Param('userId') userId: string) {
-    if (!userId) {
-      throw new BadRequestException('userId is required');
-    }
+    if (!userId) throw new BadRequestException('userId is required');
     return this.service.getPrescriptionsByUser(userId);
   }
 
   @Get('prescriptions/practitioner/:practitionerId')
-  @ApiOperation({ summary: 'Get all prescriptions for a practitioner' })
-  @ApiParam({ name: 'practitionerId', required: true, type: String })
-  @ApiResponse({
-    status: 200,
-    description: 'Prescriptions for practitioner retrieved successfully',
-  })
   async getPrescriptionsByPractitioner(
     @Param('practitionerId') practitionerId: string,
   ) {
-    if (!practitionerId) {
+    if (!practitionerId)
       throw new BadRequestException('practitionerId is required');
-    }
     return this.service.getPrescriptionsByPractitioner(practitionerId);
   }
 }

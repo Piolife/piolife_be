@@ -371,8 +371,7 @@ export class UserController {
 
     const streamClient = StreamChat.getInstance(
       this.configService.get<string>('STREAM_API_KEY') || 'fvct7vwrd7ps',
-      this.configService.get<string>('STREAM_API_SECRET') ||
-        'uzd3477hg4w2tmd7qp9zcc5yex9wvg66pambdazuqf9fb5b32szfgrqra7429vst',
+      this.configService.get<string>('STREAM_API_SECRET'),
     );
     const streamToken = streamClient.createToken(user._id);
     return {

@@ -13,6 +13,7 @@ import { PharmacyStockModule } from './pharmacy-stock/pharmacy-stock.module';
 import { CacheModule } from '@nestjs/cache-manager';
 import { MedLabStockModule } from './medLab-stock/medlab-stock.module';
 import { EmergencyStockModule } from './emergency/emergency.module';
+import { EstateModule } from './estate/estate.module';
 @Module({
   imports: [
     CacheModule.register({
@@ -39,6 +40,7 @@ import { EmergencyStockModule } from './emergency/emergency.module';
     PharmacyStockModule,
     MedLabStockModule,
     EmergencyStockModule,
+    EstateModule,
   ],
   controllers: [],
   providers: [

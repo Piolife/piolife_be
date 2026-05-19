@@ -86,83 +86,69 @@ export class MedLabStockService {
     return stocks;
   }
 
-  async createLabOrder(
-    createLabOrderDto: CreateLabOrderDto,
-  ): Promise<MedLabOrderDocument> {
-    const { userId, medLabId, testIds } = createLabOrderDto;
+  async createLabOrder(dto: CreateLabOrderDto): Promise<any> {
+    const { testIds, userId, labId, diagnosisNote } = dto;
 
-    if (!userId || !medLabId || !testIds.length) {
-      throw new BadRequestException(
-        'userId, medLabId, and testIds are required.',
-      );
-    }
-
-    // 1. Fetch all tests
-    const tests = await this.stockModel.find({
+    // Fetch all selected tests
+    const tests = await this.medLabStockModel.find({
       _id: { $in: testIds },
-      user: medLabId,
+      userId: labId,
     });
 
     if (!tests.length) {
-      throw new NotFoundException('No valid lab tests found.');
+      throw new NotFoundException('No matching tests found for this lab.');
     }
 
-    // 2. Calculate total cost
-    const totalPrice = tests.reduce((sum, t) => sum + t.price, 0);
+    const totalAmount = tests.reduce((sum, t) => sum + (t.price ?? 0), 0);
 
-    // 3. Get wallets
+    // Deduct from patient wallet
     const userWallet = await this.walletService.getWalletByUserId(userId);
-    const medLabWallet = await this.walletService.getWalletByUserId(medLabId);
-
-    if (!userWallet || !medLabWallet) {
-      throw new NotFoundException('User or MedLab wallet not found.');
+    if (!userWallet || userWallet.balance < totalAmount) {
+      throw new BadRequestException(
+        `Insufficient balance. Required: ₦${totalAmount}`,
+      );
     }
-
-    // 4. Check balance + loanBalance
-    const availableFunds = userWallet.balance;
-    if (availableFunds < totalPrice) {
-      throw new BadRequestException('Insufficient funds');
-    }
-
-    // 5. Debit user wallet
-    let remainingDebit = totalPrice;
-
-    if (userWallet.balance >= remainingDebit) {
-      userWallet.balance -= remainingDebit;
-      remainingDebit = 0;
-    }
-
+    userWallet.balance -= totalAmount;
     userWallet.transactions.push({
-      amount: totalPrice,
+      amount: totalAmount,
       type: TransactionType.LAB_TEST_PAYMENT,
-      reason: 'Lab test purchase',
-      description: `Paid for lab tests: ${tests.map((t) => t.name).join(', ')}`,
+      description: `Lab tests ordered from lab ${labId}`,
       timestamp: new Date(),
     });
-
     await userWallet.save();
 
-    // 6. Credit MedLab wallet
-    medLabWallet.balance += totalPrice;
-    medLabWallet.transactions.push({
-      amount: totalPrice,
-      type: TransactionType.LAB_TEST_REVENUE,
-      reason: 'Lab test fee received',
-      description: `Received payment from user: ${userId}`,
-      timestamp: new Date(),
-    });
+    // Credit lab wallet
+    const labWallet = await this.walletService.getWalletByUserId(labId);
+    if (labWallet) {
+      labWallet.balance += totalAmount;
+      labWallet.transactions.push({
+        amount: totalAmount,
+        type: TransactionType.LAB_TEST_REVENUE,
+        description: `Lab order payment from patient ${userId}`,
+        timestamp: new Date(),
+      });
+      await labWallet.save();
+    }
 
-    await medLabWallet.save();
-
-    // 7. Save order
-    const labOrder = await this.labOrderModel.create({
+    // Save order — include diagnosisNote so lab sees doctor's instructions
+    const order = await this.labOrderModel.create({
       userId,
-      medLabId,
-      testIds,
-      totalAmount: totalPrice,
-      status: 'completed',
+      labId,
+      tests: tests.map((t) => ({ name: t.name, price: t.price })),
+      diagnosisNote: diagnosisNote ?? '', // ← FIX: store the note
+      totalAmount,
+      status: 'pending',
     });
 
-    return labOrder;
+    return {
+      success: true,
+      message: 'Lab tests booked. The lab has been notified.',
+      orderId: order._id,
+      totalAmount,
+      diagnosisNote: diagnosisNote ?? '',
+    };
+  }
+  async getOrdersByLab(labId: string): Promise<any[]> {
+    return this.labOrderModel.find({ labId }).sort({ createdAt: -1 }).lean();
   }
 }

@@ -38,6 +38,70 @@ export class PharmacyStockService {
     private pharmacySaleModel: Model<PharmacySaleDocument>,
   ) {}
 
+  async createOrder(
+    drugIds: string[],
+    userId: string,
+    pharmacyId: string,
+  ): Promise<any> {
+    // Fetch all selected drugs
+    const drugs = await this.pharmacyStockModel.find({
+      _id: { $in: drugIds },
+      userId: pharmacyId,
+    });
+
+    if (!drugs.length) {
+      throw new NotFoundException('No matching drugs found for this pharmacy.');
+    }
+
+    const totalAmount = drugs.reduce((sum, d) => sum + (d.price ?? 0), 0);
+
+    // Deduct from user wallet
+    const userWallet = await this.walletService.getWalletByUserId(userId);
+    if (!userWallet || userWallet.balance < totalAmount) {
+      throw new BadRequestException(
+        `Insufficient balance. Required: ₦${totalAmount}, Available: ₦${userWallet?.balance ?? 0}`,
+      );
+    }
+    userWallet.balance -= totalAmount;
+    userWallet.transactions.push({
+      amount: totalAmount,
+      type: 'STOCK_PURCHASE',
+      description: `Drug order from pharmacy ${pharmacyId}`,
+      timestamp: new Date(),
+    });
+    await userWallet.save();
+
+    // Credit pharmacy wallet
+    const pharmacyWallet =
+      await this.walletService.getWalletByUserId(pharmacyId);
+    if (pharmacyWallet) {
+      pharmacyWallet.balance += totalAmount;
+      pharmacyWallet.transactions.push({
+        amount: totalAmount,
+        type: 'STOCK_SALE',
+        description: `Drug order from client ${userId}`,
+        timestamp: new Date(),
+      });
+      await pharmacyWallet.save();
+    }
+
+    // Save order record
+    const order = await this.orderModel.create({
+      userId,
+      pharmacyId,
+      drugs: drugs.map((d) => ({ name: d.name, price: d.price })),
+      totalAmount,
+      status: 'pending',
+    });
+
+    return {
+      success: true,
+      message: 'Order placed successfully. Pharmacy notified.',
+      orderId: order._id,
+      totalAmount,
+    };
+  }
+
   async create(
     createPharmacyStockDto: CreatePharmacyStockDto,
     userId: string,
@@ -179,6 +243,9 @@ export class PharmacyStockService {
       remainingWalletBalance: userWallet.balance,
       remainingLoanBalance: userWallet.loanBalance,
     };
+  }
+  async getOrdersByPharmacy(pharmacyId: string): Promise<any[]> {
+    return this.orderModel.find({ pharmacyId }).sort({ createdAt: -1 }).lean();
   }
   async getSales(practitionerId: string) {
     const sales = await this.pharmacySaleModel

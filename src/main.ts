@@ -17,7 +17,7 @@ async function bootstrap() {
   );
   app.use(helmet());
   app.enableCors();
-  app.useWebSocketAdapter(new IoAdapter(app) as any);
+  app.useWebSocketAdapter(new IoAdapter(app));
 
   app.setGlobalPrefix('api/v12');
   app.setViewEngine('hbs');

@@ -16,8 +16,11 @@ export class EmailService {
 
     this.transporter = nodemailer.createTransport({
       host: this.configService.get<string>('EMAIL_TRANSPORTER_HOST'),
-      port: 465,
-      secure: true,
+      port: 587,
+      secure: false,
+      requireTLS: true,
+      connectionTimeout: 10_000,
+      greetingTimeout: 10_000,
       auth: {
         user: emailAccount,
         pass: emailPassword,

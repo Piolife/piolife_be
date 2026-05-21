@@ -259,7 +259,17 @@ export class UserService {
           : createUserDto.policyAgreement,
     });
 
-    const createdUser = await user.save();
+    let createdUser: typeof user;
+    try {
+      createdUser = await user.save();
+    } catch (err: any) {
+      if (err?.code === 11000) {
+        throw new ConflictException(
+          'An account with this email already exists.',
+        );
+      }
+      throw err;
+    }
 
     // Handle referral
     if (referralCode) {
@@ -285,12 +295,9 @@ export class UserService {
     const frontendUrl = this.configService.get<string>('FRONTEND_URL');
     const otpLink = `${frontendUrl}/api/signup/verify-email?token=${encodeURIComponent(otpToken)}&otp=${encodeURIComponent(otp)}`;
 
-    await this.emailService.sendConfirmationEmail(
-      createdUser.email,
-      createUserDto.firstName,
-      otp,
-      otpLink,
-    );
+    this.emailService
+      .sendConfirmationEmail(createdUser.email, createUserDto.firstName, otp, otpLink)
+      .catch((err) => this.logger.error('Confirmation email failed', err?.message));
     await this.walletService.createWallet(createdUser._id);
 
     return {

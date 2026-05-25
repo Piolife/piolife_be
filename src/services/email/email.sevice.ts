@@ -1,31 +1,25 @@
 /* eslint-disable prettier/prettier */
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import * as nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 import * as handlebars from 'handlebars';
 import * as fs from 'fs-extra';
 import * as path from 'path';
 
 @Injectable()
 export class EmailService {
-  private transporter: nodemailer.Transporter;
+  private readonly resend: Resend;
+  private readonly fromAddress: string;
+  private readonly logger = new Logger(EmailService.name);
 
   constructor(private configService: ConfigService) {
-    const emailAccount = this.configService.get<string>('EMAIL_USER');
-    const emailPassword = this.configService.get<string>('EMAIL_PASSWORD');
+    const apiKey = this.configService.get<string>('RESEND_API_KEY') ?? '';
+    this.resend = new Resend(apiKey);
 
-    this.transporter = nodemailer.createTransport({
-      host: this.configService.get<string>('EMAIL_TRANSPORTER_HOST'),
-      port: 587,
-      secure: false,
-      requireTLS: true,
-      connectionTimeout: 10_000,
-      greetingTimeout: 10_000,
-      auth: {
-        user: emailAccount,
-        pass: emailPassword,
-      },
-    });
+    // Use a verified domain sender or fall back to Resend's onboarding address
+    this.fromAddress =
+      this.configService.get<string>('EMAIL_FROM') ??
+      'Piolife <onboarding@resend.dev>';
   }
 
   private async loadTemplate(
@@ -50,19 +44,21 @@ export class EmailService {
     subject: string,
     templateName: string,
     variables: Record<string, any>,
-  ) {
+  ): Promise<void> {
     const html = await this.loadTemplate(templateName, variables);
 
-    const mailOptions = {
-      from: '" Piolife " <' + this.configService.get<string>('EMAIL_USER') + '>',
+    const { error } = await this.resend.emails.send({
+      from: this.fromAddress,
       to,
       subject,
       html,
-    };
+    });
 
-    await this.transporter.sendMail(mailOptions);
+    if (error) {
+      this.logger.error(`Resend error sending "${subject}" to ${to}:`, error);
+      throw new Error(`Failed to send email: ${error.message}`);
+    }
   }
-
 
   async sendConfirmationEmail(
     email: string,
@@ -70,7 +66,7 @@ export class EmailService {
     otp: string,
     otpLink: string,
   ): Promise<void> {
-    const variables = {firstName, otp, otpLink };
+    const variables = { firstName, otp, otpLink };
     await this.sendEmailTemplate(
       email,
       'Verify your email address',
@@ -87,7 +83,6 @@ export class EmailService {
     const variables = { otp, otpLink };
     await this.sendEmailTemplate(
       email,
-
       'Reset your Forgot Password',
       'resetPassword',
       variables,

@@ -195,6 +195,54 @@ export class WalletController {
     };
   }
 
+  // ── VIP / App-data subscription ──────────────────────────────────────────
+  // Called by vipSubscription.tsx and appDataSubscription.tsx
+  // tier: 'basic' | 'vip' | 'app_data'
+  // Costs: basic = 2000, vip = 5000, app_data = 500 (PioCoins)
+  @Post('subscribe')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Subscribe to a VIP or App Data plan' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['userId', 'tier'],
+      properties: {
+        userId: { type: 'string' },
+        tier: { type: 'string', enum: ['basic', 'vip', 'app_data'] },
+      },
+    },
+  })
+  async subscribe(@Body() body: { userId: string; tier: string }) {
+    const TIER_COSTS: Record<string, number> = {
+      basic: 2000,
+      vip: 5000,
+      app_data: 500,
+    };
+    const cost = TIER_COSTS[body.tier];
+    if (!cost) {
+      throw new BadRequestException(`Invalid subscription tier: ${body.tier}`);
+    }
+    const wallet = await this.walletService.getWalletByUserId(body.userId);
+    if (!wallet || wallet.balance < cost) {
+      throw new BadRequestException(
+        `Insufficient balance. Required: ₦${cost}, Available: ₦${wallet?.balance ?? 0}`,
+      );
+    }
+    wallet.balance -= cost;
+    wallet.transactions.push({
+      amount: cost,
+      type: 'WITHDRAWAL' as any,
+      description: `${body.tier.toUpperCase()} subscription`,
+      timestamp: new Date(),
+    } as any);
+    await wallet.save();
+    return {
+      success: true,
+      message: `${body.tier} subscription activated successfully.`,
+      newBalance: wallet.balance,
+    };
+  }
+
   // ── Paystack webhook ──────────────────────────────────────────────────────
   @Post('verify-deposit')
   @HttpCode(HttpStatus.OK)

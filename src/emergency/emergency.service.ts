@@ -203,6 +203,7 @@ export class EmergencyStockService {
     }
   }
   async getEmergenciesByClient(userId: string): Promise<any[]> {
-    return this.emergencyStockModel.find({ userId }).sort({ createdAt: -1 }).lean();
+    // caller = the user who triggered the emergency (field name in EmergencyStock schema)
+    return this.stockModel.find({ caller: userId }).sort({ createdAt: -1 }).lean();
   }
 }

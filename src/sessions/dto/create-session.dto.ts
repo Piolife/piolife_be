@@ -161,8 +161,21 @@ export class CreatePrescriptionDto {
   @IsOptional()
   referral?: string;
 
+<<<<<<< HEAD
+=======
+  // Sent by prescriptionForm.tsx after a call — links prescription to consultation
+>>>>>>> 81c49ff (fix: sync backend with frontend — add missing endpoints and fix model refs)
   @ApiPropertyOptional()
   @IsString()
   @IsOptional()
   consultationId?: string;
+<<<<<<< HEAD
+=======
+
+  // patientId is an alias for userId (sent by writePrescription.tsx)
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  patientId?: string;
+>>>>>>> 81c49ff (fix: sync backend with frontend — add missing endpoints and fix model refs)
 }

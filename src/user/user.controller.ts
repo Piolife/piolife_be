@@ -25,7 +25,9 @@ import {
   HttpStatus,
   HttpException,
   Patch,
+  UseGuards,
 } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 import { UserService } from './user.service';
 import { CreateUserDto, LoginDto, LogoutDto } from './dto/user.dto';
 import { JwtService } from '@nestjs/jwt';
@@ -171,6 +173,15 @@ export class UserController {
   }
 
   // @UseGuards(JwtAuthGuard)
+  // ── Referral info ── must be declared BEFORE :id to avoid route shadowing ──
+  @Get(':id/referral')
+  @UseGuards(AuthGuard('jwt'))
+  @ApiOperation({ summary: 'Get referral code, count and earnings for a user' })
+  @ApiParam({ name: 'id', required: true })
+  async getReferralInfo(@Param('id') id: string) {
+    return this.userService.getReferralInfo(id);
+  }
+
   @Get(':id')
   // @ApiBearerAuth()
   @ApiOperation({ summary: 'Get a user by ID' })

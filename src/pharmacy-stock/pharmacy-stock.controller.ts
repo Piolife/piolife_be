@@ -70,6 +70,7 @@ export class PharmacyStockController {
   }
 
   // FIX: added — pharmDrugs.tsx calls POST /pharmacy-stock/orders
+  // Also accepts quantities (map of id→qty), withDelivery, prescriptionId from frontend
   @Post('orders')
   @UseGuards(AuthGuard('jwt'))
   @ApiOperation({
@@ -81,15 +82,33 @@ export class PharmacyStockController {
       required: ['drugIds', 'userId', 'pharmacyId'],
       properties: {
         drugIds: { type: 'array', items: { type: 'string' } },
+        quantities: { type: 'object', description: 'Map of drugId → quantity' },
         userId: { type: 'string' },
         pharmacyId: { type: 'string' },
+        withDelivery: { type: 'boolean' },
+        prescriptionId: { type: 'string' },
       },
     },
   })
   async createOrder(
-    @Body() body: { drugIds: string[]; userId: string; pharmacyId: string },
+    @Body()
+    body: {
+      drugIds: string[];
+      quantities?: Record<string, number>;
+      userId: string;
+      pharmacyId: string;
+      withDelivery?: boolean;
+      prescriptionId?: string;
+    },
   ) {
-    return this.service.createOrder(body.drugIds, body.userId, body.pharmacyId);
+    return this.service.createOrder(
+      body.drugIds,
+      body.userId,
+      body.pharmacyId,
+      body.quantities,
+      body.withDelivery,
+      body.prescriptionId,
+    );
   }
 
   // FIX: added — pharmServices.tsx calls GET /pharmacy-stock/orders/:userId

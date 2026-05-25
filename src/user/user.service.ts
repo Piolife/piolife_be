@@ -675,4 +675,23 @@ export class UserService {
 
     return updatedUser;
   }
+
+  /** GET /users/:id/referral — used by referral.tsx and (tabs)/refer.tsx */
+  async getReferralInfo(userId: string) {
+    const user = await this.userModel
+      .findById(userId)
+      .select('referralCode referralCount username')
+      .lean();
+
+    if (!user) throw new NotFoundException('User not found');
+
+    // referralEarnings: 1000 PioCoins per referral (₦1,000 per referral bonus)
+    const referralEarnings = (user.referralCount ?? 0) * 1000;
+
+    return {
+      referralCode: user.referralCode ?? user.username ?? '',
+      referralCount: user.referralCount ?? 0,
+      referralEarnings,
+    };
+  }
 }

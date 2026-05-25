@@ -400,7 +400,9 @@ export class SessionsService {
   }
 
   async createPrescription(dto: CreatePrescriptionDto): Promise<Prescription> {
-    const { userId, practitionerId, medicalIssueId } = dto;
+    // patientId is an alias for userId sent by writePrescription.tsx
+    const userId = dto.userId ?? dto.patientId;
+    const { practitionerId, medicalIssueId } = dto;
 
     if (!userId || !practitionerId) {
       throw new BadRequestException('UserId and PractitionerId are required.');

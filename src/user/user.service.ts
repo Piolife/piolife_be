@@ -276,7 +276,7 @@ export class UserService {
       const referrer = await this.userModel.findOne({ username: referralCode });
 
       if (referrer) {
-        await this.walletService.credit(referrer._id, 1000, 'Referral bonus');
+        await this.walletService.credit(referrer._id, 20, 'Referral bonus');
         referrer.referralCount = (referrer.referralCount || 0) + 1;
         await referrer.save();
       }
@@ -685,8 +685,7 @@ export class UserService {
 
     if (!user) throw new NotFoundException('User not found');
 
-    // referralEarnings: 1000 PioCoins per referral (₦1,000 per referral bonus)
-    const referralEarnings = (user.referralCount ?? 0) * 1000;
+    const referralEarnings = (user.referralCount ?? 0) * 20;
 
     return {
       referralCode: user.referralCode ?? user.username ?? '',

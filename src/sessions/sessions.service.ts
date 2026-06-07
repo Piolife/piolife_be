@@ -146,9 +146,6 @@ export class SessionsService {
       practitionerId: selectedPractitioner._id,
       languageProficiency: dto.languageProficiency || [],
       specialty: dto.specialty || [],
-      name: dto.name || '',
-      age: dto.age || '',
-      gender: dto.gender || '',
     });
 
     return {

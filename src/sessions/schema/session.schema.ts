@@ -27,15 +27,6 @@ export class Session {
   @Prop({ type: [String], default: [] })
   specialty: string[];
 
-  @Prop()
-  name: string;
-
-  @Prop()
-  age: string;
-
-  @Prop()
-  gender: string;
-
   @Prop({
     default: 'pending',
     enum: ['pending', 'in-progress', 'completed', 'cancelled'],

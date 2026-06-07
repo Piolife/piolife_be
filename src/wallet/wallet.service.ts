@@ -56,11 +56,19 @@ export class WalletService {
       description: `Deposit of ₦${amount} with reference ${reference}`,
     };
 
+    // PRD: 30% of every deposit auto-repays outstanding loan balance
+    let creditAmount = amount;
+    let loanRepaid = 0;
+    if ((wallet.loanBalance ?? 0) > 0) {
+      loanRepaid = Math.min(amount * 0.3, wallet.loanBalance);
+      creditAmount = amount - loanRepaid;
+    }
+
     const updatedWallet = await this.walletModel.findOneAndUpdate(
       { userId },
       {
         $push: { transactions: depositTransaction },
-        $inc: { balance: amount },
+        $inc: { balance: creditAmount, loanBalance: -loanRepaid },
       },
       { new: true, useFindAndModify: false },
     );
@@ -71,7 +79,9 @@ export class WalletService {
 
     return {
       success: true,
-      message: 'Deposit successful',
+      message: loanRepaid > 0
+        ? `Deposit successful. ₦${loanRepaid} applied to your loan balance.`
+        : 'Deposit successful',
       deposit: depositTransaction,
     };
   }

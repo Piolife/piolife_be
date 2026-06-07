@@ -239,7 +239,12 @@ export class UserService {
       const facilityId = this.generateFacilityId(createUserDto, role);
       username = facilityId;
     } else {
-      username = await this.generateUniqueUsername(createUserDto.firstName);
+      username = await this.generateUniqueUsername(
+        createUserDto.firstName,
+        createUserDto.lastName,
+        createUserDto.phoneNumber,
+        normalizedRole as UserRole,
+      );
     }
 
     // Create user
@@ -300,6 +305,11 @@ export class UserService {
       .catch((err) => this.logger.error('Confirmation email failed', err?.message));
     await this.walletService.createWallet(createdUser._id);
 
+    // PRD: 200 PioCoins signup bonus for every new user
+    if (role === UserRole.CLIENT) {
+      await this.walletService.credit(createdUser._id, 200, 'Welcome bonus — 200 PioCoins');
+    }
+
     return {
       message: 'Account created successfully. Please verify your email.',
       token: otpToken,
@@ -334,17 +344,33 @@ export class UserService {
     return `${stateCode}${phoneSuffix}${lga}${altPhoneSuffix}${wardName}${name}`;
   }
 
-  private async generateUniqueUsername(firstName: string): Promise<string> {
-    const base = firstName.trim().toLowerCase().slice(0, 2);
-    let username;
-    let exists = true;
+  private async generateUniqueUsername(
+    firstName: string,
+    lastName?: string,
+    phoneNumber?: string,
+    role?: UserRole,
+  ): Promise<string> {
+    const first4 = (firstName ?? '').trim().toLowerCase().slice(0, 4);
+    const last6Phone = (phoneNumber ?? '').replace(/\D/g, '').slice(-6);
+    const last2 = (lastName ?? '').trim().toLowerCase().slice(0, 2);
 
-    while (exists) {
-      const suffix = Math.floor(100000 + Math.random() * 900000);
-      username = `${base}${suffix}`;
-      exists = (await this.userModel.exists({ username })) !== null;
+    let base: string;
+    if (role === UserRole.MEDICAL_PRACTITIONER) {
+      // PRD: DR + last 6 digits of mobile + first 3 letters of first name
+      const first3 = (firstName ?? '').trim().toUpperCase().slice(0, 3);
+      base = `DR${last6Phone}${first3}`;
+    } else {
+      // PRD: first 4 letters of first name + last 6 digits of mobile + first 2 letters of last name
+      base = `${first4}${last6Phone}${last2}`;
     }
 
+    // Ensure uniqueness by appending counter if collision
+    let username = base;
+    let counter = 1;
+    while ((await this.userModel.exists({ username })) !== null) {
+      username = `${base}${counter}`;
+      counter++;
+    }
     return username;
   }
 

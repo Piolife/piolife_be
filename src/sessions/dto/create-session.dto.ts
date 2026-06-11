@@ -72,15 +72,42 @@ export class CreateReviewDto {
 }
 
 export class CreateConsultationDto {
-  @ApiProperty()
+  @ApiPropertyOptional()
   @IsString()
-  @IsNotEmpty()
-  practitionerId: string;
+  @IsOptional()
+  practitionerId?: string;
 
-  @ApiProperty()
+  @ApiPropertyOptional()
   @IsString()
-  @IsNotEmpty()
-  medicalIssueId: string;
+  @IsOptional()
+  medicalIssueId?: string;
+
+  @ApiPropertyOptional({ type: [String] })
+  @IsArray()
+  @IsOptional()
+  @IsString({ each: true })
+  issues?: string[];
+
+  @ApiPropertyOptional({ type: [String] })
+  @IsArray()
+  @IsOptional()
+  @IsString({ each: true })
+  issueIds?: string[];
+
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  callType?: string;
+
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  language?: string;
+
+  @ApiPropertyOptional()
+  @IsNumber()
+  @IsOptional()
+  amount?: number;
 
   @ApiPropertyOptional({ example: 'pending' })
   @IsString()
@@ -89,10 +116,12 @@ export class CreateConsultationDto {
 }
 
 export class CreatePrescriptionDto {
-  @ApiProperty()
+  // FIX: writePrescription.tsx / prescriptionForm.tsx send `patientId`,
+  // not `userId` — made optional here, service aliases via dto.patientId
+  @ApiPropertyOptional()
   @IsString()
-  @IsNotEmpty()
-  userId: string;
+  @IsOptional()
+  userId?: string;
 
   // FIX: controller sets this from JWT token — made optional in body
   @ApiPropertyOptional()
@@ -100,10 +129,11 @@ export class CreatePrescriptionDto {
   @IsOptional()
   practitionerId?: string;
 
-  @ApiProperty()
+  // FIX: not always known at prescription time — made optional
+  @ApiPropertyOptional()
   @IsString()
-  @IsNotEmpty()
-  medicalIssueId: string;
+  @IsOptional()
+  medicalIssueId?: string;
 
   // FIX: frontend sends `complaint` — accept both spellings
   @ApiPropertyOptional({

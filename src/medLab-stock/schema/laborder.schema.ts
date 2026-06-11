@@ -6,7 +6,7 @@ const snowflakeIdGenerator = new SnowflakeIdGenerator();
 
 export type MedLabOrderDocument = MedLabOrder & Document;
 
-@Schema()
+@Schema({ timestamps: true })
 export class MedLabOrder {
   @Prop({
     type: String,
@@ -29,6 +29,9 @@ export class MedLabOrder {
 
   @Prop({ default: 'pending' })
   status: string;
+
+  @Prop()
+  diagnosisNote?: string;
 }
 
 export const MedLabOrderSchema = SchemaFactory.createForClass(MedLabOrder);

@@ -49,15 +49,9 @@ export class PharmacyStockService {
     withDelivery?: boolean,
     prescriptionId?: string,
   ): Promise<any> {
-<<<<<<< HEAD
-    // Fetch all selected drugs
-    const drugs = await this.stockModel.find({
-      _id: { $in: drugIds as any },
-=======
     // Fetch all selected drugs (user field = pharmacy owner's id)
     const drugs = await this.stockModel.find({
       _id: { $in: drugIds },
->>>>>>> 81c49ff (fix: sync backend with frontend — add missing endpoints and fix model refs)
       user: pharmacyId,
     });
 
@@ -78,7 +72,6 @@ export class PharmacyStockService {
         `Insufficient balance. Required: ₦${totalAmount}, Available: ₦${userWallet?.balance ?? 0}`,
       );
     }
-<<<<<<< HEAD
     userWallet.balance -= totalAmount;
     userWallet.transactions.push({
       amount: totalAmount,
@@ -86,24 +79,11 @@ export class PharmacyStockService {
       description: `Drug order from pharmacy ${pharmacyId}`,
       timestamp: new Date(),
     });
-=======
-    (userWallet as any).balance -= totalAmount;
-    (userWallet as any).transactions = [
-      ...((userWallet as any).transactions ?? []),
-      {
-        amount: totalAmount,
-        type: 'STOCK_PURCHASE',
-        description: `Drug order from pharmacy`,
-        timestamp: new Date(),
-      },
-    ];
->>>>>>> 81c49ff (fix: sync backend with frontend — add missing endpoints and fix model refs)
     await userWallet.save();
 
     // Credit pharmacy wallet
     const pharmacyWallet = await this.walletModel.findOne({ userId: pharmacyId });
     if (pharmacyWallet) {
-<<<<<<< HEAD
       pharmacyWallet.balance += totalAmount;
       pharmacyWallet.transactions.push({
         amount: totalAmount,
@@ -111,28 +91,6 @@ export class PharmacyStockService {
         description: `Drug order from client ${userId}`,
         timestamp: new Date(),
       });
-      await pharmacyWallet.save();
-    }
-
-    // Save order record
-    const order = await this.pharmacySaleModel.create({
-      userId,
-      practitionerId: pharmacyId,
-      items: drugs.map((d) => ({ stockId: (d as any)._id, name: d.name, quantity: 1, price: d.price, total: d.price })),
-      totalAmount,
-      status: 'pending',
-    } as any);
-=======
-      (pharmacyWallet as any).balance += totalAmount;
-      (pharmacyWallet as any).transactions = [
-        ...((pharmacyWallet as any).transactions ?? []),
-        {
-          amount: totalAmount,
-          type: 'STOCK_SALE',
-          description: `Drug order from client`,
-          timestamp: new Date(),
-        },
-      ];
       await pharmacyWallet.save();
     }
 
@@ -153,7 +111,6 @@ export class PharmacyStockService {
       ...(withDelivery !== undefined && { withDelivery }),
       ...(prescriptionId && { prescriptionId }),
     });
->>>>>>> 81c49ff (fix: sync backend with frontend — add missing endpoints and fix model refs)
 
     return {
       success: true,
@@ -306,14 +263,10 @@ export class PharmacyStockService {
     };
   }
   async getOrdersByPharmacy(pharmacyId: string): Promise<any[]> {
-<<<<<<< HEAD
-    return this.pharmacySaleModel.find({ practitionerId: pharmacyId }).sort({ createdAt: -1 }).lean();
-=======
     return this.pharmacySaleModel
       .find({ practitionerId: pharmacyId })
       .sort({ createdAt: -1 })
       .lean();
->>>>>>> 81c49ff (fix: sync backend with frontend — add missing endpoints and fix model refs)
   }
   async getSales(practitionerId: string) {
     const sales = await this.pharmacySaleModel

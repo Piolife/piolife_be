@@ -137,6 +137,7 @@ export class MedLabStockService {
       testIds,
       totalAmount,
       status: 'pending',
+      diagnosisNote,
     } as any);
 
     return {

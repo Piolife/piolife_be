@@ -18,11 +18,26 @@ export class Consultations {
   @Prop({ type: String, ref: 'User', required: true })
   userId: string;
 
-  @Prop({ type: String, ref: 'User', required: true })
-  practitionerId: string;
+  @Prop({ type: String, ref: 'User' })
+  practitionerId?: string;
 
-  @Prop({ type: String, ref: 'MedicalIssue', required: true })
-  medicalIssueId: string;
+  @Prop({ type: String, ref: 'MedicalIssue' })
+  medicalIssueId?: string;
+
+  @Prop({ type: [String], default: undefined })
+  issues?: string[];
+
+  @Prop({ type: [String], default: undefined })
+  issueIds?: string[];
+
+  @Prop({ type: String })
+  callType?: string;
+
+  @Prop({ type: String })
+  language?: string;
+
+  @Prop({ type: Number })
+  amount?: number;
 
   @Prop({ default: 'pending' })
   status: string;

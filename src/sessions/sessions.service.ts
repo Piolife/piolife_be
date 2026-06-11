@@ -335,7 +335,7 @@ export class SessionsService {
     const consultation = await this.consultationModel.create({
       ...createConsultationDto,
       userId,
-      status: 'in_progress',
+      status: createConsultationDto.status ?? 'pending',
     });
     return consultation;
   }
@@ -344,9 +344,14 @@ export class SessionsService {
     // fetch consultations
     const consultations = await this.consultationModel.find({ userId }).lean();
 
-    // extract unique practitioner + medical issue IDs
-    const practitionerIds = consultations.map((c) => c.practitionerId);
-    const medicalIssueIds = consultations.map((c) => c.medicalIssueId);
+    // extract unique practitioner + medical issue IDs (may be absent for
+    // payment-only consultations awaiting a practitioner match)
+    const practitionerIds = consultations
+      .map((c) => c.practitionerId)
+      .filter(Boolean);
+    const medicalIssueIds = consultations
+      .map((c) => c.medicalIssueId)
+      .filter(Boolean);
 
     // fetch all related users
     const users = await this.userModel
@@ -370,8 +375,12 @@ export class SessionsService {
     return consultations.map((c) => ({
       ...c,
       user: userMap.get(c.userId.toString()) || null,
-      practitioner: userMap.get(c.practitionerId.toString()) || null,
-      medicalIssue: issueMap.get(c.medicalIssueId.toString()) || null,
+      practitioner: c.practitionerId
+        ? userMap.get(c.practitionerId.toString()) || null
+        : null,
+      medicalIssue: c.medicalIssueId
+        ? issueMap.get(c.medicalIssueId.toString()) || null
+        : null,
     }));
   }
 
@@ -392,7 +401,9 @@ export class SessionsService {
     return consultations.map((c) => ({
       ...c,
       user: userMap.get(c.userId.toString()) || null,
-      practitioner: userMap.get(c.practitionerId.toString()) || null,
+      practitioner: c.practitionerId
+        ? userMap.get(c.practitionerId.toString()) || null
+        : null,
     }));
   }
 

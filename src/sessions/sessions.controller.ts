@@ -129,8 +129,8 @@ export class SessionsController {
     @Req() req: RequestWithUser,
   ) {
     const userId = req.user.userId;
-    if (!userId || !dto.practitionerId) {
-      throw new BadRequestException('userId and practitionerId are required');
+    if (!userId) {
+      throw new BadRequestException('userId is required');
     }
     return this.service.create(dto, userId);
   }
@@ -160,7 +160,7 @@ export class SessionsController {
     @Req() req: RequestWithUser,
   ) {
     const practitionerId = req.user.userId;
-    if (!dto.userId || !practitionerId) {
+    if ((!dto.userId && !dto.patientId) || !practitionerId) {
       throw new BadRequestException('userId and practitionerId are required');
     }
     // Ensure practitionerId in body matches authenticated user

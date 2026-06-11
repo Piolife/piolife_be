@@ -75,6 +75,25 @@ export class UserController {
     return this.userService.verifyEmail(token, otp);
   }
 
+  @Post('resend-verification')
+  @ApiOperation({ summary: 'Resend email verification OTP' })
+  @ApiResponse({
+    status: 200,
+    description: 'Verification OTP resent successfully',
+  })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        email: { type: 'string', example: 'admin@example.com' },
+      },
+    },
+  })
+  @HttpCode(HttpStatus.OK)
+  async resendVerification(@Body('email') email: string) {
+    return this.userService.resendVerificationOtp(email);
+  }
+
   @Get('medical-practitioners')
   async getMedicalPractitioners(
     @Query('languages') languages?: string | string[],

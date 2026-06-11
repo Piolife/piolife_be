@@ -421,6 +421,43 @@ export class UserService {
     }
   }
 
+  async resendVerificationOtp(
+    email: string,
+  ): Promise<{ message: string; otpToken: string }> {
+    const user = await this.userModel.findOne({
+      email: { $regex: new RegExp(`^${email}$`, 'i') },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    if (user.isVerified) {
+      throw new BadRequestException('Email already verified');
+    }
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otpToken = this.jwtService.sign(
+      { userId: user._id, otp },
+      {
+        secret: this.configService.get<string>('JWT_SECRET'),
+        expiresIn: '30m',
+      },
+    );
+
+    const frontendUrl = this.configService.get<string>('FRONTEND_URL');
+    const otpLink = `${frontendUrl}/api/signup/verify-email?token=${encodeURIComponent(otpToken)}&otp=${encodeURIComponent(otp)}`;
+
+    await this.emailService.sendConfirmationEmail(
+      user.email,
+      user.firstName,
+      otp,
+      otpLink,
+    );
+
+    return { message: 'Verification code resent', otpToken };
+  }
+
   // async findUserByEmail(email: string): Promise<User> {
   //   const user = await this.userModel
   //     .findOne({ email: { $regex: new RegExp(`^${email}$`, 'i') } })

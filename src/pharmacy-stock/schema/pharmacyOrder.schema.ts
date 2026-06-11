@@ -46,6 +46,12 @@ export class PharmacySale {
 
   @Prop({ default: 'completed' })
   status: string;
+
+  @Prop()
+  withDelivery?: boolean;
+
+  @Prop()
+  prescriptionId?: string;
 }
 
 export const PharmacySaleSchema = SchemaFactory.createForClass(PharmacySale);

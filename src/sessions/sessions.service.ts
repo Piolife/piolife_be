@@ -66,27 +66,28 @@ export class SessionsService {
       query.specialty = { $in: dto.specialty };
     }
 
-    // 🔑 Wallet check
-    const wallet = await this.walletService.getWalletByUserId(dto.userId);
-
     let specialtyDetails: any[] = [];
     if (dto.specialty?.length) {
       specialtyDetails = await this.medicalIssueModel.find({
         _id: { $in: dto.specialty } as any,
       });
 
-      const totalCost = specialtyDetails.reduce(
-        (sum, issue) => sum + (issue.price || 0),
-        0,
-      );
-
-      const availableFunds =
-        (wallet?.balance || 0) + (wallet?.loanBalance || 0);
-
-      if (!wallet || availableFunds < totalCost) {
-        throw new ForbiddenException(
-          `Insufficient wallet funds. Required: ${totalCost}, Available: ${availableFunds}`,
+      // Only check wallet when a userId is provided (POST booking flow).
+      // GET discovery calls from the frontend omit userId — frontend handles
+      // payment separately before calling this endpoint.
+      if (dto.userId) {
+        const wallet = await this.walletService.getWalletByUserId(dto.userId);
+        const totalCost = specialtyDetails.reduce(
+          (sum, issue) => sum + (issue.price || 0),
+          0,
         );
+        const availableFunds =
+          (wallet?.balance || 0) + (wallet?.loanBalance || 0);
+        if (!wallet || availableFunds < totalCost) {
+          throw new ForbiddenException(
+            `Insufficient wallet funds. Required: ${totalCost}, Available: ${availableFunds}`,
+          );
+        }
       }
     }
 

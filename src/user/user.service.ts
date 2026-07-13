@@ -543,11 +543,15 @@ export class UserService {
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const otpHash = await bcrypt.hash(otp, 10);
 
-    await (this.cacheManager as any).set(`otp:${user._id}`, otpHash, {
-      ttl: 600,
-    });
+    // cache-manager v7 expects TTL in milliseconds as a plain number
+    await (this.cacheManager as any).set(`otp:${user._id}`, otpHash, 600 * 1000);
 
-    await this.emailService.SendResetPassword(user.email, otp, '');
+    try {
+      await this.emailService.SendResetPassword(user.email, otp, '');
+    } catch (emailError) {
+      this.logger.error(`Failed to send reset email to ${user.email}:`, emailError);
+      throw new Error('Could not send password reset email. Please try again later.');
+    }
 
     return { message: 'OTP sent to your email address' };
   }

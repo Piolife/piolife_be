@@ -13,9 +13,13 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey:
-        process.env.JWT_SECRET ||
-        'uzd3477hg4w2tmd7qp9zcc5yex9wvg66pambdazuqf9fb5b32szfgrqra7429vst',
+      secretOrKey: (() => {
+        const secret = process.env.JWT_SECRET;
+        if (!secret || secret === 'your_jwt_secret') {
+          throw new Error('JWT_SECRET env var is not set or is still the placeholder value. Set a real secret in Railway.');
+        }
+        return secret;
+      })(),
     });
   }
   validate(payload: any) {

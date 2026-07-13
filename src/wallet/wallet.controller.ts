@@ -18,6 +18,7 @@ import {
   Body,
   Param,
   BadRequestException,
+  ForbiddenException,
   Get,
   NotFoundException,
   Headers,
@@ -69,34 +70,44 @@ export class WalletController {
 
   // ── Balance ───────────────────────────────────────────────────────────────
   @Get(':userId/balance')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get user wallet balance' })
   @ApiParam({ name: 'userId', required: true })
   async getWalletBalance(
     @Param('userId') userId: string,
+    @Req() req: any,
   ): Promise<{ balance: number; loanBalance: number }> {
+    if (req.user?.userId?.toString() !== userId) throw new ForbiddenException('Access denied.');
     return this.walletService.getWalletBalance(userId);
   }
 
   // ── Transactions (two URL patterns — frontend uses both) ──────────────────
   @Get('transactions/:userId')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get transaction history for a user' })
-  async getTransactions(@Param('userId') userId: string) {
+  async getTransactions(@Param('userId') userId: string, @Req() req: any) {
     if (!userId) throw new NotFoundException('User ID is required');
+    if (req.user?.userId?.toString() !== userId) throw new ForbiddenException('Access denied.');
     return this.walletService.getTransactionHistorys(userId);
   }
 
   @Get(':userId/transactions')
-  async getTransactionsAlt(@Param('userId') userId: string) {
+  @UseGuards(JwtAuthGuard)
+  async getTransactionsAlt(@Param('userId') userId: string, @Req() req: any) {
     if (!userId) throw new NotFoundException('User ID is required');
+    if (req.user?.userId?.toString() !== userId) throw new ForbiddenException('Access denied.');
     return this.walletService.getTransactionHistorys(userId);
   }
 
   // ── Deposit (Paystack reference) ──────────────────────────────────────────
   @Post(':userId/deposit')
+  @UseGuards(JwtAuthGuard)
   async deposit(
     @Param('userId') userId: string,
     @Body('reference') reference: string,
+    @Req() req: any,
   ): Promise<{ success: boolean; message: string; deposit: any }> {
+    if (req.user?.userId?.toString() !== userId) throw new ForbiddenException('Access denied.');
     const user = await this.userModel.findById(userId);
     if (!user) throw new NotFoundException('User not found.');
 
@@ -133,7 +144,9 @@ export class WalletController {
   async deductFromWallet(
     @Param('userId') userId: string,
     @Body() body: { amount: number; description?: string },
+    @Req() req: any,
   ) {
+    if (req.user?.userId?.toString() !== userId) throw new ForbiddenException('Access denied.');
     if (!body.amount || body.amount <= 0) {
       throw new BadRequestException('Amount must be greater than zero.');
     }
@@ -171,7 +184,9 @@ export class WalletController {
   async requestWithdrawal(
     @Param('userId') userId: string,
     @Body() body: { amount: number },
+    @Req() req: any,
   ) {
+    if (req.user?.userId?.toString() !== userId) throw new ForbiddenException('Access denied.');
     if (!body.amount || body.amount <= 0) {
       throw new BadRequestException('Amount must be greater than zero.');
     }

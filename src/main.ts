@@ -16,7 +16,16 @@ async function bootstrap() {
     }),
   );
   app.use(helmet());
-  app.enableCors();
+  app.enableCors({
+    origin: [
+      'https://piolifebe-production.up.railway.app',
+      'https://piolife-be.onrender.com',
+      /^exp:\/\//,       // Expo Go dev client
+      /localhost/,       // Local development
+    ],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    credentials: true,
+  });
   app.useWebSocketAdapter(new IoAdapter(app));
 
   app.setGlobalPrefix('api/v12');

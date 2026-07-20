@@ -647,6 +647,28 @@ export class UserService {
     }
   }
 
+  async changePassword(
+    userId: string,
+    currentPassword: string,
+    newPassword: string,
+  ): Promise<{ message: string }> {
+    if (!userId || !currentPassword || !newPassword) {
+      throw new BadRequestException('All fields are required');
+    }
+    if (newPassword.length < 6) {
+      throw new BadRequestException('New password must be at least 6 characters');
+    }
+    const user = await this.userModel.findById(userId).select('+password');
+    if (!user) throw new NotFoundException('User not found');
+
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+    if (!isMatch) throw new BadRequestException('Current password is incorrect');
+
+    user.password = await bcrypt.hash(newPassword, 10);
+    await user.save();
+    return { message: 'Password changed successfully' };
+  }
+
   async getUserById(userId: string): Promise<User> {
     if (!userId) {
       throw new BadRequestException('User ID is required');

@@ -478,6 +478,10 @@ export class SessionsService {
     return prescription.save();
   }
 
+  async getPrescriptionByConsultationId(consultationId: string): Promise<any> {
+    return this.prescriptionModel.findOne({ consultationId }).lean();
+  }
+
   async getPrescriptionsByUser(userId: string): Promise<any> {
     // Fetch prescriptions for this user
     const prescriptions = await this.prescriptionModel.find({ userId }).lean();

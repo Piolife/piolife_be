@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsNumber, IsString } from 'class-validator';
+import { IsNumber, IsOptional, IsString } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateEmergencyStockDto {
@@ -14,47 +14,72 @@ export class CreateEmergencyStockDto {
 export class geoLocationDto {
   @ApiProperty({ description: 'Address of caller' })
   @IsString()
-  @IsNotEmpty()
   address: string;
 
   @ApiProperty({ description: 'State of caller' })
   @IsString()
-  @IsNotEmpty()
   state: string;
 
   @ApiProperty({ description: 'lga of caller' })
   @IsString()
-  @IsNotEmpty()
   lga: string;
 
   @ApiProperty({ description: 'ward of caller' })
   @IsString()
-  @IsNotEmpty()
   ward: string;
 }
+
 export class CallEmergencyFormData {
-  @ApiProperty({ description: 'Nature Of Incident' })
-  @IsString()
-  @IsNotEmpty()
-  natureOfIncident: string;
+  // Direct GPS coords (new frontend flow)
+  @ApiProperty({ required: false })
+  @IsNumber()
+  @IsOptional()
+  latitude?: number;
 
-  @ApiProperty({ description: 'Address of caller' })
-  @IsString()
-  @IsNotEmpty()
-  address: string;
+  @ApiProperty({ required: false })
+  @IsNumber()
+  @IsOptional()
+  longitude?: number;
 
-  @ApiProperty({ description: 'State of caller' })
+  // Accepts both field names from old and new frontend
+  @ApiProperty({ required: false })
   @IsString()
-  @IsNotEmpty()
-  state: string;
+  @IsOptional()
+  incidentType?: string;
 
-  @ApiProperty({ description: 'lga of caller' })
+  @ApiProperty({ required: false })
   @IsString()
-  @IsNotEmpty()
-  lga: string;
+  @IsOptional()
+  natureOfIncident?: string;
 
-  @ApiProperty({ description: 'ward of caller' })
+  @ApiProperty({ required: false })
   @IsString()
-  @IsNotEmpty()
-  ward: string;
+  @IsOptional()
+  locationDescription?: string;
+
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  landmark?: string;
+
+  // Legacy address-based fields
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  address?: string;
+
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  state?: string;
+
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  lga?: string;
+
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  ward?: string;
 }

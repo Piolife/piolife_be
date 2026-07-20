@@ -131,10 +131,12 @@ export class MedLabStockService {
     }
 
     // Save order — include diagnosisNote so lab sees doctor's instructions
+    // Also embed test name/price so medlabServices.tsx can render them
     const order = await this.labOrderModel.create({
       userId,
       medLabId: labId,
       testIds,
+      tests: tests.map((t) => ({ _id: t._id, name: t.name, price: t.price })),
       totalAmount,
       status: 'pending',
       diagnosisNote,
@@ -149,6 +151,6 @@ export class MedLabStockService {
     };
   }
   async getOrdersByLab(labId: string): Promise<any[]> {
-    return this.labOrderModel.find({ labId }).sort({ createdAt: -1 }).lean();
+    return this.labOrderModel.find({ medLabId: labId }).sort({ createdAt: -1 }).lean();
   }
 }

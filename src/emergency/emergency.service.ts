@@ -69,21 +69,34 @@ export class EmergencyStockService {
     userId: string,
     formData: CallEmergencyFormData,
   ) {
-    // 1️⃣ Geocode the incident location
-    const fullAddress = `${formData.address}, ${formData.ward}, ${formData.lga}, ${formData.state}`;
-    const apiKey = process.env.GOOGLE_MAPS_API_KEY;
+    // Resolve incident type (accept either field name)
+    const incidentType = formData.incidentType ?? formData.natureOfIncident ?? '';
 
-    const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(fullAddress)}&key=${apiKey}`;
-    const res = await axios.get(url);
+    // 1️⃣ Resolve coordinates — skip geocoding when GPS coords are provided directly
+    let latitude: number;
+    let longitude: number;
 
-    if (res.data.status !== 'OK') {
-      throw new BadRequestException(
-        'Unable to find location for the given address',
-      );
+    if (
+      typeof formData.latitude === 'number' &&
+      typeof formData.longitude === 'number'
+    ) {
+      latitude = formData.latitude;
+      longitude = formData.longitude;
+    } else {
+      // Fall back to geocoding legacy address fields
+      const fullAddress = `${formData.address}, ${formData.ward}, ${formData.lga}, ${formData.state}`;
+      const apiKey = process.env.GOOGLE_MAPS_API_KEY;
+      const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(fullAddress)}&key=${apiKey}`;
+      const res = await axios.get(url);
+      if (res.data.status !== 'OK') {
+        throw new BadRequestException(
+          'Unable to find location for the given address',
+        );
+      }
+      const loc = res.data.results[0].geometry.location;
+      latitude = loc.lat;
+      longitude = loc.lng;
     }
-
-    const { lat: latitude, lng: longitude } =
-      res.data.results[0].geometry.location;
 
     // 2️⃣ Define the service cost (can be made dynamic later)
     const serviceCost = 500; // smallest currency unit (e.g., kobo/cent)
@@ -160,8 +173,8 @@ export class EmergencyStockService {
       state: formData.state,
       ward: formData.ward,
       lga: formData.lga,
-      natureOfIncident: formData.natureOfIncident,
-      address: formData.address,
+      natureOfIncident: incidentType,
+      address: formData.address ?? formData.locationDescription,
       services_amount: serviceCost,
       percentage_amount: percentageAmount,
       caller: userId,

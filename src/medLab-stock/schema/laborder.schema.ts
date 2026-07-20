@@ -24,6 +24,9 @@ export class MedLabOrder {
   @Prop({ type: [String], required: true })
   testIds: string[];
 
+  @Prop({ type: [{ _id: String, name: String, price: Number }], default: [] })
+  tests: { _id: string; name: string; price: number }[];
+
   @Prop({ required: true })
   totalAmount: number;
 

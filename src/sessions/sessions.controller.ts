@@ -168,6 +168,15 @@ export class SessionsController {
     return this.service.createPrescription(dto);
   }
 
+  @Get('prescriptions/consultation/:consultationId')
+  async getPrescriptionByConsultation(
+    @Param('consultationId') consultationId: string,
+  ): Promise<any> {
+    if (!consultationId)
+      throw new BadRequestException('consultationId is required');
+    return this.service.getPrescriptionByConsultationId(consultationId);
+  }
+
   @Get('prescriptions/user/:userId')
   async getPrescriptionsByUser(@Param('userId') userId: string): Promise<any> {
     if (!userId) throw new BadRequestException('userId is required');

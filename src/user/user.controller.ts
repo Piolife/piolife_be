@@ -524,6 +524,26 @@ export class UserController {
     );
   }
 
+  @Post('change-password')
+  @ApiOperation({ summary: 'Change password for logged-in user' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        userId: { type: 'string' },
+        currentPassword: { type: 'string' },
+        newPassword: { type: 'string' },
+      },
+    },
+  })
+  async changePassword(
+    @Body('userId') userId: string,
+    @Body('currentPassword') currentPassword: string,
+    @Body('newPassword') newPassword: string,
+  ) {
+    return this.userService.changePassword(userId, currentPassword, newPassword);
+  }
+
   @Patch(':id')
   @ApiParam({ name: 'id', description: 'User ID' })
   @ApiBody({ type: UpdateUserDto })

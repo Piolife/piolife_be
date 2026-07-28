@@ -96,18 +96,97 @@ export class WalletService {
 
   async getWalletBalance(
     userId: string,
-  ): Promise<{ balance: number; loanBalance: number }> {
+  ): Promise<{ balance: number; loanBalance: number; reserved: number }> {
     const wallet = await this.walletModel.findOne({ userId });
 
     if (!wallet) {
       throw new NotFoundException('Wallet not found');
     }
 
-    // Return both wallet balance and loan balance
+    const reserved = wallet.reserved ?? 0;
     return {
-      balance: wallet.balance,
+      // balance is the spendable amount — gross balance minus any active holds
+      balance: wallet.balance - reserved,
       loanBalance: wallet.loanBalance || 0,
+      reserved,
     };
+  }
+
+  // Lock funds for a pending consultation. Idempotent: safe to call twice for the same consultationId.
+  async reserve(userId: string, amount: number, consultationId: string): Promise<void> {
+    const wallet = await this.walletModel.findOne({ userId });
+    if (!wallet) throw new NotFoundException('Wallet not found');
+
+    const alreadyReserved = (wallet.reservations ?? []).some(
+      (r) => r.consultationId === consultationId,
+    );
+    if (alreadyReserved) return;
+
+    const available = wallet.balance - (wallet.reserved ?? 0);
+    if (available < amount) {
+      throw new ForbiddenException(
+        `Insufficient balance. Available: ${available}, Required: ${amount}`,
+      );
+    }
+
+    wallet.reserved = (wallet.reserved ?? 0) + amount;
+    wallet.reservations = wallet.reservations ?? [];
+    (wallet.reservations as any[]).push({ consultationId, amount, createdAt: new Date() });
+    wallet.transactions.push({
+      amount,
+      type: TransactionType.CONSULTATION_RESERVE,
+      description: 'Consultation fee held (pending call)',
+      timestamp: new Date(),
+    });
+    await wallet.save();
+  }
+
+  // Release a hold — called when the doctor declines or the call is cancelled.
+  async release(userId: string, consultationId: string): Promise<void> {
+    const wallet = await this.walletModel.findOne({ userId });
+    if (!wallet) throw new NotFoundException('Wallet not found');
+
+    const reservations = (wallet.reservations ?? []) as any[];
+    const idx = reservations.findIndex((r) => r.consultationId === consultationId);
+    if (idx === -1) return; // already released or never reserved
+
+    const { amount } = reservations[idx];
+    reservations.splice(idx, 1);
+    wallet.reservations = reservations;
+    wallet.reserved = Math.max((wallet.reserved ?? 0) - amount, 0);
+    wallet.transactions.push({
+      amount,
+      type: TransactionType.CONSULTATION_RELEASE,
+      description: 'Consultation fee released (cancelled)',
+      timestamp: new Date(),
+    });
+    await wallet.save();
+  }
+
+  // Finalise a hold — called inside createPrescription when service is delivered.
+  // Moves the reserved amount out of balance (patient pays) and returns the amount
+  // so the caller can credit the doctor.
+  async capture(userId: string, consultationId: string): Promise<number> {
+    const wallet = await this.walletModel.findOne({ userId });
+    if (!wallet) throw new NotFoundException('Wallet not found');
+
+    const reservations = (wallet.reservations ?? []) as any[];
+    const idx = reservations.findIndex((r) => r.consultationId === consultationId);
+    if (idx === -1) return 0; // no active hold — caller falls back to medicalIssueId price
+
+    const { amount } = reservations[idx];
+    reservations.splice(idx, 1);
+    wallet.reservations = reservations;
+    wallet.reserved = Math.max((wallet.reserved ?? 0) - amount, 0);
+    wallet.balance -= amount; // gross balance now reduced — spendable balance unchanged
+    wallet.transactions.push({
+      amount,
+      type: TransactionType.CONSULTATION_PAYMENT,
+      description: 'Consultation fee paid',
+      timestamp: new Date(),
+    });
+    await wallet.save();
+    return amount;
   }
 
   async getWallet(userId: string): Promise<WalletDocument> {

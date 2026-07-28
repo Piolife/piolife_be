@@ -125,6 +125,38 @@ export class WalletController {
     return this.walletService.deposit(userId, amount, reference, status);
   }
 
+  // ── Reserve / Release / Capture (consultation hold flow) ─────────────────
+  @Post(':userId/reserve')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Hold funds for a pending consultation' })
+  async reserveForConsultation(
+    @Param('userId') userId: string,
+    @Body() body: { amount: number; consultationId: string },
+    @Req() req: any,
+  ) {
+    if (req.user?.userId?.toString() !== userId) throw new ForbiddenException('Access denied.');
+    if (!body.amount || body.amount <= 0) throw new BadRequestException('Amount must be > 0.');
+    if (!body.consultationId) throw new BadRequestException('consultationId is required.');
+    await this.walletService.reserve(userId, body.amount, body.consultationId);
+    const balance = await this.walletService.getWalletBalance(userId);
+    return { success: true, ...balance };
+  }
+
+  @Post(':userId/release')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Release a held consultation fee (cancelled call)' })
+  async releaseReservation(
+    @Param('userId') userId: string,
+    @Body() body: { consultationId: string },
+    @Req() req: any,
+  ) {
+    if (req.user?.userId?.toString() !== userId) throw new ForbiddenException('Access denied.');
+    if (!body.consultationId) throw new BadRequestException('consultationId is required.');
+    await this.walletService.release(userId, body.consultationId);
+    const balance = await this.walletService.getWalletBalance(userId);
+    return { success: true, ...balance };
+  }
+
   // ── NEW: Deduct — used by frontend for every in-app payment ───────────────
   @Post(':userId/deduct')
   @UseGuards(JwtAuthGuard)

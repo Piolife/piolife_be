@@ -13,6 +13,8 @@ export enum TransactionType {
   CONSULTATION_FEE = 'consultation_fee',
   CONSULTATION_REFUND = 'consultation_refund',
   CONSULTATION_PAYMENT = 'consultation_payment',
+  CONSULTATION_RESERVE = 'consultation_reserve',
+  CONSULTATION_RELEASE = 'consultation_release',
   EMERGENCY_PAYMENT = 'emergency_payment',
   LOAN_DISBURSEMENT = 'loan_disbursement',
   LOAN_REPAYMENT = 'loan_repayment',
@@ -20,6 +22,12 @@ export enum TransactionType {
   LAB_TEST_PAYMENT = 'LAB_TEST_PAYMENT',
   LAB_TEST_REVENUE = 'LAB_TEST_REVENUE',
   STOCK_SALE = 'STOCK_SALE',
+}
+
+interface Reservation {
+  consultationId: string;
+  amount: number;
+  createdAt: Date;
 }
 
 interface Transaction {
@@ -55,6 +63,13 @@ export class Wallet {
 
   @Prop({ type: Number, default: 0 })
   loanBalance: number;
+
+  // Funds locked for pending consultations (not yet paid, not yet released)
+  @Prop({ type: Number, default: 0 })
+  reserved: number;
+
+  @Prop({ type: [Object], default: [] })
+  reservations: Reservation[];
 }
 
 export const WalletSchema = SchemaFactory.createForClass(Wallet);

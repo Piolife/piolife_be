@@ -84,7 +84,7 @@ export class SessionsService {
           0,
         );
         const availableFunds =
-          (wallet?.balance || 0) + (wallet?.loanBalance || 0);
+          (wallet?.balance || 0) - (wallet?.reserved || 0) + (wallet?.loanBalance || 0);
         if (!wallet || availableFunds < totalCost) {
           throw new ForbiddenException(
             `Insufficient wallet funds. Required: ${totalCost}, Available: ${availableFunds}`,
@@ -487,18 +487,24 @@ export class SessionsService {
     const advice = dto.prognosis ?? dto.advice ?? '';
     const diagnosis = dto.diagnosis ?? '';
 
-    // Credit practitioner wallet (patient already paid via /wallet/:id/deduct)
+    // Capture the patient's reservation (debit patient) then credit the doctor.
+    // capture() returns the reserved amount; if no reservation exists (legacy call
+    // or consultationId missing) fall back to the medicalIssue price lookup.
+    let feeAmount = 0;
+    if (dto.consultationId) {
+      feeAmount = await this.walletService.capture(userId, dto.consultationId);
+    }
+
+    // Fallback: no reservation found — derive fee from medicalIssueId (old flow)
+    if (feeAmount === 0 && medicalIssueId) {
+      const medicalIssue = await this.medicalIssueModel.findById(medicalIssueId);
+      feeAmount = medicalIssue?.price ?? 0;
+    }
+
     const practitionerWallet =
       await this.walletService.getWalletByUserId(practitionerId);
     if (!practitionerWallet) {
       throw new NotFoundException('Practitioner wallet not found.');
-    }
-
-    let feeAmount = 0;
-    if (medicalIssueId) {
-      const medicalIssue =
-        await this.medicalIssueModel.findById(medicalIssueId);
-      feeAmount = medicalIssue?.price ?? 0;
     }
 
     if (feeAmount > 0) {

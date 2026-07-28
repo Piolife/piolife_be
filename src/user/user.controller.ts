@@ -555,4 +555,15 @@ export class UserController {
   ): Promise<User> {
     return this.userService.updateUser(id, updateUserDto);
   }
+
+  @Patch(':id/fcm-token')
+  @UseGuards(AuthGuard('jwt'))
+  async updateFcmToken(
+    @Param('id') id: string,
+    @Body('fcmToken') fcmToken: string,
+  ) {
+    if (!fcmToken) return { message: 'no token provided' };
+    await this.userService.updateUser(id, { fcmToken } as any);
+    return { message: 'FCM token saved' };
+  }
 }

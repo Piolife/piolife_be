@@ -13,10 +13,12 @@
 import {
   Controller,
   Post,
+  Patch,
   Get,
   Body,
   Param,
   BadRequestException,
+  NotFoundException,
   UseGuards,
   Req,
   Query,
@@ -148,6 +150,25 @@ export class SessionsController {
     if (!practitionerId)
       throw new BadRequestException('practitionerId is required');
     return this.service.getConsultationsByPractitioner(practitionerId);
+  }
+
+  @Patch('consultations/:id/awaiting-prescription')
+  @UseGuards(AuthGuard('jwt'))
+  async setAwaitingPrescription(@Param('id') id: string) {
+    if (!id) throw new BadRequestException('consultationId is required');
+    try {
+      return await this.service.markConsultationAwaitingPrescription(id);
+    } catch {
+      throw new NotFoundException('Consultation not found');
+    }
+  }
+
+  @Post('consultations/:id/notify-doctor')
+  @UseGuards(AuthGuard('jwt'))
+  async notifyDoctorForPrescription(@Param('id') id: string) {
+    if (!id) throw new BadRequestException('consultationId is required');
+    await this.service.notifyDoctorForPrescription(id);
+    return { message: 'Doctor notified' };
   }
 
   // ── Prescriptions ─────────────────────────────────────────────────────────

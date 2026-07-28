@@ -150,6 +150,9 @@ export class User {
 
   @Prop({ type: Number, default: 0 })
   consultationCount: number;
+
+  @Prop()
+  fcmToken?: string;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

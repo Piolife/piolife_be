@@ -6,6 +6,7 @@ import { SessionsController } from './sessions.controller';
 // import { Session, SessionSchema } from './schema/session.schema';
 import { User, UserSchema } from 'src/user/Schema/user.schema';
 import { WalletModule } from 'src/wallet/wallet.module';
+import { NotificationModule } from 'src/services/notifications/notification.module';
 import {
   MedicalIssue,
   MedicalIssueSchema,
@@ -31,6 +32,7 @@ import { Prescription, PrescriptionSchema } from './schema/prescription.schema';
       { name: Prescription.name, schema: PrescriptionSchema },
     ]),
     WalletModule,
+    NotificationModule,
   ],
   controllers: [SessionsController],
   providers: [SessionsService],

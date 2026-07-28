@@ -36,6 +36,7 @@ import {
   PrescriptionDocument,
 } from './schema/prescription.schema';
 import { TransactionType } from 'src/wallet/schema/wallet.schema';
+import { NotificationService } from 'src/services/notifications/notification.service';
 
 @Injectable()
 export class SessionsService {
@@ -47,10 +48,11 @@ export class SessionsService {
     private readonly walletService: WalletService,
     @InjectModel(Review.name)
     private readonly reviewModel: Model<ReviewDocument>,
-    @InjectModel(Consultations.name) // 👈 add this
+    @InjectModel(Consultations.name)
     private readonly consultationModel: Model<ConsultationsDocument>,
     @InjectModel(Prescription.name)
     private readonly prescriptionModel: Model<PrescriptionDocument>,
+    private readonly notificationService: NotificationService,
   ) {}
 
   async findMatchingPractitioners(dto: BookSessionDto): Promise<any> {
@@ -339,6 +341,40 @@ export class SessionsService {
       status: createConsultationDto.status ?? 'pending',
     });
     return consultation;
+  }
+
+  async markConsultationAwaitingPrescription(consultationId: string): Promise<any> {
+    const result = await this.consultationModel.findByIdAndUpdate(
+      consultationId,
+      { status: 'awaiting_prescription' },
+      { new: true },
+    );
+    if (!result) throw new Error('Consultation not found');
+    return result;
+  }
+
+  async notifyDoctorForPrescription(consultationId: string): Promise<void> {
+    const consultation = await this.consultationModel.findById(consultationId).lean();
+    if (!consultation?.practitionerId) return;
+
+    const doctor = await this.userModel
+      .findById(consultation.practitionerId)
+      .select('fcmToken firstName')
+      .lean();
+
+    if (!doctor?.fcmToken) return;
+
+    await this.notificationService.sendToDevice(
+      doctor.fcmToken,
+      'Prescription Needed',
+      'Your patient is waiting to view their prescription.',
+      {
+        type: 'prescription_request',
+        consultationId,
+        patientId: String(consultation.userId ?? ''),
+        medicalIssueId: String(consultation.medicalIssueId ?? ''),
+      },
+    );
   }
 
   async getConsultationsByUser(userId: string): Promise<any> {

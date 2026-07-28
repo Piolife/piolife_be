@@ -422,8 +422,23 @@ export class SessionsService {
   }
 
   async getConsultationsByPractitioner(practitionerId: string): Promise<any> {
+    // Also look up consultations via prescriptions in case practitionerId
+    // wasn't stamped on the consultation at creation time
+    const prescriptions = await this.prescriptionModel
+      .find({ practitionerId }, { consultationId: 1 })
+      .lean();
+    const consultationIdsFromRx = prescriptions
+      .map((p) => p.consultationId)
+      .filter(Boolean);
+
     const consultations = await this.consultationModel
-      .find({ practitionerId })
+      .find({
+        $or: [
+          { practitionerId },
+          { _id: { $in: consultationIdsFromRx } as any },
+        ],
+      })
+      .sort({ createdAt: -1 })
       .lean();
 
     const userIds = consultations.map((c) => c.userId);
@@ -447,10 +462,24 @@ export class SessionsService {
   async createPrescription(dto: CreatePrescriptionDto): Promise<Prescription> {
     // patientId is an alias for userId sent by writePrescription.tsx
     const userId = dto.userId ?? dto.patientId;
-    const { practitionerId, medicalIssueId } = dto;
+    const { practitionerId } = dto;
+    // medicalIssueId may arrive as an empty string — treat it as absent
+    let medicalIssueId: string | undefined =
+      dto.medicalIssueId && dto.medicalIssueId.trim() !== ''
+        ? dto.medicalIssueId
+        : undefined;
 
     if (!userId || !practitionerId) {
       throw new BadRequestException('UserId and PractitionerId are required.');
+    }
+
+    // If medicalIssueId wasn't passed, fall back to the value stored on the consultation
+    if (!medicalIssueId && dto.consultationId) {
+      const consultation = await this.consultationModel
+        .findById(dto.consultationId)
+        .lean();
+      const raw = consultation?.medicalIssueId;
+      if (raw) medicalIssueId = raw.toString();
     }
 
     // Normalise field aliases from frontend
@@ -481,18 +510,20 @@ export class SessionsService {
         timestamp: new Date(),
       });
       await practitionerWallet.save();
-
-      // Increment consultation count
-      await this.userModel.updateOne(
-        { _id: practitionerId as any },
-        { $inc: { consultationCount: 1 } },
-      );
     }
 
-    // Mark the consultation as completed
+    // Always increment consultation count when a prescription is submitted,
+    // regardless of fee (free consultations still count toward the doctor's total)
+    await this.userModel.updateOne(
+      { _id: practitionerId as any },
+      { $inc: { consultationCount: 1 } },
+    );
+
+    // Mark the consultation as completed and stamp practitionerId if missing
     if (dto.consultationId) {
       await this.consultationModel.findByIdAndUpdate(dto.consultationId, {
         status: 'completed',
+        practitionerId,
       });
     }
 

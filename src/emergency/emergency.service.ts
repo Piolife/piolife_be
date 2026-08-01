@@ -98,8 +98,8 @@ export class EmergencyStockService {
       longitude = loc.lng;
     }
 
-    // 2️⃣ Define the service cost (can be made dynamic later)
-    const serviceCost = 500; // smallest currency unit (e.g., kobo/cent)
+    // 2️⃣ Define the service cost — matches EMERGENCY_COST on the frontend (PC 5,000)
+    const serviceCost = 5000;
 
     // 3️⃣ Debit caller's wallet
     const callerWallet = await this.walletService.getWalletByUserId(userId);
@@ -183,11 +183,16 @@ export class EmergencyStockService {
 
     await emergencyRecord.save();
 
-    await this.streamService.sendEmergencyAlert(
-      nearestProvider._id.toString(),
-      { latitude, longitude },
-      nearestProvider.distance,
-    );
+    // Non-fatal — dispatch succeeds even if Stream notification fails
+    try {
+      await this.streamService.sendEmergencyAlert(
+        nearestProvider._id.toString(),
+        { latitude, longitude },
+        nearestProvider.distance,
+      );
+    } catch (streamErr) {
+      console.error('Stream emergency alert failed (non-fatal):', streamErr);
+    }
 
     // 6️⃣ Return info for logging or notifying
     return {

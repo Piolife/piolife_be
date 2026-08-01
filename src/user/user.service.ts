@@ -79,7 +79,9 @@ export class UserService {
       );
     }
 
-    // Role-based validation
+    // Role-based validation — only enforce fields required at signup time.
+    // Profile fields (gender, specialty, bankDetails, location, etc.) are
+    // collected later via PATCH /users/:id (progressive onboarding).
     const validationRules = {
       [UserRole.CLIENT]: {
         prohibitedFields: [
@@ -87,54 +89,18 @@ export class UserService {
           'degreeCertificate',
           'currentPracticeLicense',
           'specialty',
-          'ward',
-          'localGovernmentArea',
           'hospitalName',
           'officerInCharge',
           'languageProficiency',
         ],
-        requiredFields: [
-          'profilePicture',
-          'firstName',
-          'lastName',
-          'email',
-          'password',
-          'phoneNumber',
-          'gender',
-          'maritalStatus',
-          'dateOfBirth',
-          'countryOfResidence',
-          'countryOfOrigin',
-          'stateOfResidence',
-          'stateOfOrigin',
-        ],
+        requiredFields: ['firstName', 'lastName'],
       },
       [UserRole.MEDICAL_PRACTITIONER]: {
         prohibitedFields: [
-          'ward',
-          'localGovernmentArea',
           'hospitalName',
           'officerInCharge',
         ],
-        requiredFields: [
-          'profilePicture',
-          'firstName',
-          'lastName',
-          'email',
-          'password',
-          'phoneNumber',
-          'specialty',
-          'gender',
-          'maritalStatus',
-          'dateOfBirth',
-          'countryOfResidence',
-          'countryOfOrigin',
-          'stateOfResidence',
-          'stateOfOrigin',
-          'languageProficiency',
-          'bankDetails',
-        ],
-        mustHaveFiles: { degreeCertificate, currentPracticeLicense },
+        requiredFields: ['firstName', 'lastName'],
       },
       [UserRole.EMERGENCY_SERVICES]: {
         prohibitedFields: [
@@ -146,54 +112,15 @@ export class UserService {
           'maritalStatus',
           'dateOfBirth',
         ],
-        requiredFields: [
-          'hospitalName',
-          'officerInCharge',
-          'bankDetails',
-          'ward',
-          'localGovernmentArea',
-          'stateOfResidence',
-          'alternativePhoneNumber',
-          'email',
-          'password',
-          'latitude',
-          'longitude',
-        ],
+        requiredFields: ['hospitalName', 'officerInCharge'],
       },
       [UserRole.PHAMACY_SERVICES]: {
-        prohibitedFields: ['profilePicture'],
-        requiredFields: [
-          'pharmacyName',
-          'logo',
-          'stateOfResidence',
-          'phoneNumber',
-          'localGovernmentArea',
-          'ward',
-          'alternativePhoneNumber',
-          'officerInCharge',
-          'latitude',
-          'longitude',
-          'bankDetails',
-        ],
+        prohibitedFields: [],
+        requiredFields: ['pharmacyName', 'officerInCharge'],
       },
-
       [UserRole.MEDICAL_LAB_SERVICES]: {
-        prohibitedFields: ['profilePicture'],
-        requiredFields: [
-          'medicalLabName',
-          'logo',
-          'stateOfResidence',
-          'phoneNumber',
-          'localGovernmentArea',
-          'ward',
-          'alternativePhoneNumber',
-          'officerInCharge',
-          'latitude',
-          'longitude',
-          'bankDetails',
-          // 'firstName',
-          // 'lastName',
-        ],
+        prohibitedFields: [],
+        requiredFields: ['medicalLabName', 'officerInCharge'],
       },
     };
 
@@ -215,15 +142,6 @@ export class UserService {
         }
       }
 
-      if (rules.mustHaveFiles) {
-        for (const [key, value] of Object.entries(rules.mustHaveFiles)) {
-          if (!value) {
-            throw new BadRequestException(
-              `${key.replace(/([A-Z])/g, ' $1')} is required.`,
-            );
-          }
-        }
-      }
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);

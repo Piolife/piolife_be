@@ -66,29 +66,38 @@ export class LoanService {
     }
 
     // Create and approve loan instantly
+    const INTEREST_RATE = 0.03;
+    const interest = Math.ceil(amount * INTEREST_RATE);
+    const totalRepayableAmount = amount + interest;
+
     const dueDate = new Date();
     dueDate.setDate(dueDate.getDate() + 30);
 
     const loan = await this.loanModel.create({
       userId,
-      amount,
+      amount: totalRepayableAmount, // total owed (principal + interest)
+      interest,
+      totalRepayableAmount,
       status: 'approved',
       dueDate,
     });
 
     await loan.save();
 
+    // Reduce eligibility by disbursed amount (not repayable amount)
     await this.walletService.reduceLoanEligibility(userId, amount);
+    // Credit wallet with disbursed amount only
     await this.walletService.addFunds(userId, amount);
 
     await this.walletService.addTransaction(userId, {
       amount,
       timestamp: new Date(),
       type: 'loan',
-      description: 'Loan approved',
+      description: `Loan disbursed: PC ${amount}. Total repayable: PC ${totalRepayableAmount} (3% interest = PC ${interest}). 30% of each wallet funding will auto-repay this loan.`,
     });
 
-    await this.walletService.updateLoanBalance(userId, loan.amount);
+    // Loan balance reflects what the user owes (principal + interest)
+    await this.walletService.updateLoanBalance(userId, totalRepayableAmount);
 
     return loan;
   }
